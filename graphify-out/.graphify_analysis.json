@@ -1,0 +1,221 @@
+{
+  "communities": {
+    "0": [
+      "subprocess",
+      "tempfile",
+      "time",
+      "tools_backtest_nyao_backtest_close_terminal",
+      "tools_backtest_nyao_backtest_cmd_run",
+      "tools_backtest_nyao_backtest_common_files",
+      "tools_backtest_nyao_backtest_git_info",
+      "tools_backtest_nyao_backtest_git_info_git",
+      "tools_backtest_nyao_backtest_month_range",
+      "tools_backtest_nyao_backtest_next_month",
+      "tools_backtest_nyao_backtest_plain_number",
+      "tools_backtest_nyao_backtest_powershell",
+      "tools_backtest_nyao_backtest_rationale_130",
+      "tools_backtest_nyao_backtest_rationale_240",
+      "tools_backtest_nyao_backtest_rationale_363",
+      "tools_backtest_nyao_backtest_rationale_95",
+      "tools_backtest_nyao_backtest_reopen_terminal",
+      "tools_backtest_nyao_backtest_set_tester_tab_graph",
+      "tools_backtest_nyao_backtest_terminal_running",
+      "tools_backtest_nyao_backtest_write_utf16"
+    ],
+    "1": [
+      "argparse",
+      "ctypes",
+      "datetime",
+      "decimal",
+      "functools",
+      "os",
+      "pathlib",
+      "tools_backtest_nyao_backtest",
+      "tools_backtest_nyao_backtest_default_cpu_mask",
+      "tools_backtest_nyao_backtest_kernel32",
+      "tools_backtest_nyao_backtest_limit_processes",
+      "tools_backtest_nyao_backtest_main",
+      "tools_backtest_nyao_backtest_processentry32w",
+      "tools_backtest_nyao_backtest_rationale_169",
+      "tools_backtest_nyao_backtest_rationale_2"
+    ],
+    "2": [
+      "tools_backtest_nyao_backtest_cell_text",
+      "tools_backtest_nyao_backtest_ea_label",
+      "tools_backtest_nyao_backtest_fmt_pct",
+      "tools_backtest_nyao_backtest_fmt_pf",
+      "tools_backtest_nyao_backtest_rationale_557",
+      "tools_backtest_nyao_backtest_render_html",
+      "tools_backtest_nyao_backtest_render_html_band",
+      "tools_backtest_nyao_backtest_render_html_run_cell",
+      "tools_backtest_nyao_backtest_render_html_sign_cls",
+      "tools_backtest_nyao_backtest_render_markdown",
+      "tools_backtest_nyao_backtest_setup_rows",
+      "tools_backtest_nyao_backtest_summary_columns",
+      "tools_backtest_nyao_backtest_summary_values",
+      "tools_backtest_nyao_backtest_tick_labels"
+    ],
+    "3": [
+      "html",
+      "re",
+      "shutil",
+      "tools_backtest_nyao_backtest_compile_ea",
+      "tools_backtest_nyao_backtest_ea_version",
+      "tools_backtest_nyao_backtest_parse_report",
+      "tools_backtest_nyao_backtest_parse_report_num",
+      "tools_backtest_nyao_backtest_parse_report_val",
+      "tools_backtest_nyao_backtest_rationale_250",
+      "tools_backtest_nyao_backtest_rationale_455",
+      "tools_backtest_nyao_backtest_read_text_any",
+      "tools_backtest_nyao_backtest_safe"
+    ],
+    "4": [
+      "csv",
+      "tools_backtest_nyao_backtest_build_report",
+      "tools_backtest_nyao_backtest_clear_report",
+      "tools_backtest_nyao_backtest_equity_svg",
+      "tools_backtest_nyao_backtest_rationale_115",
+      "tools_backtest_nyao_backtest_rationale_121",
+      "tools_backtest_nyao_backtest_rationale_368",
+      "tools_backtest_nyao_backtest_rationale_401",
+      "tools_backtest_nyao_backtest_read_equity",
+      "tools_backtest_nyao_backtest_report_files",
+      "tools_backtest_nyao_backtest_save_equity"
+    ],
+    "5": [
+      "json",
+      "sys",
+      "tools_backtest_nyao_backtest_cmd_report",
+      "tools_backtest_nyao_backtest_find_data_dir",
+      "tools_backtest_nyao_backtest_find_terminal",
+      "tools_backtest_nyao_backtest_rationale_40",
+      "tools_backtest_nyao_backtest_save_plan",
+      "tools_backtest_nyao_backtest_terminal_candidates"
+    ],
+    "6": [
+      "scripts_git_push"
+    ]
+  },
+  "cohesion": {
+    "0": 0.13157894736842105,
+    "1": 0.19047619047619047,
+    "2": 0.23076923076923078,
+    "3": 0.19696969696969696,
+    "4": 0.2,
+    "5": 0.32142857142857145,
+    "6": 1.0
+  },
+  "gods": [
+    {
+      "id": "tools_backtest_nyao_backtest_cmd_run",
+      "label": "cmd_run()",
+      "degree": 28
+    },
+    {
+      "id": "tools_backtest_nyao_backtest_build_report",
+      "label": "build_report()",
+      "degree": 14
+    },
+    {
+      "id": "tools_backtest_nyao_backtest_render_html",
+      "label": "render_html()",
+      "degree": 10
+    },
+    {
+      "id": "tools_backtest_nyao_backtest_parse_report",
+      "label": "parse_report()",
+      "degree": 8
+    },
+    {
+      "id": "tools_backtest_nyao_backtest_cmd_report",
+      "label": "cmd_report()",
+      "degree": 8
+    },
+    {
+      "id": "tools_backtest_nyao_backtest_render_markdown",
+      "label": "render_markdown()",
+      "degree": 7
+    },
+    {
+      "id": "tools_backtest_nyao_backtest_compile_ea",
+      "label": "compile_ea()",
+      "degree": 7
+    },
+    {
+      "id": "tools_backtest_nyao_backtest_set_tester_tab_graph",
+      "label": "set_tester_tab_graph()",
+      "degree": 6
+    },
+    {
+      "id": "tools_backtest_nyao_backtest_limit_processes",
+      "label": "limit_processes()",
+      "degree": 6
+    },
+    {
+      "id": "tools_backtest_nyao_backtest_fmt_pct",
+      "label": "fmt_pct()",
+      "degree": 6
+    }
+  ],
+  "surprises": [
+    {
+      "source": "main()",
+      "target": "cmd_run()",
+      "source_files": [
+        "tools/backtest/nyao_backtest.py",
+        "tools/backtest/nyao_backtest.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "indirect_call",
+      "note": "Bridges community 0 \u2192 community 1"
+    },
+    {
+      "source": "main()",
+      "target": "cmd_report()",
+      "source_files": [
+        "tools/backtest/nyao_backtest.py",
+        "tools/backtest/nyao_backtest.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "indirect_call",
+      "note": "Bridges community 1 \u2192 community 5"
+    },
+    {
+      "source": "cmd_run()",
+      "target": "sys",
+      "source_files": [
+        "tools/backtest/nyao_backtest.py",
+        ""
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "note": "Bridges community 0 \u2192 community 5"
+    },
+    {
+      "source": "cmd_run()",
+      "target": "build_report()",
+      "source_files": [
+        "tools/backtest/nyao_backtest.py",
+        "tools/backtest/nyao_backtest.py"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "note": "Bridges community 0 \u2192 community 4"
+    },
+    {
+      "source": "cmd_run()",
+      "target": "compile_ea()",
+      "source_files": [
+        "tools/backtest/nyao_backtest.py",
+        "tools/backtest/nyao_backtest.py"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "note": "Bridges community 0 \u2192 community 3"
+    }
+  ],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

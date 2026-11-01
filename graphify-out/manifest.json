@@ -1,0 +1,112 @@
+{
+  ".github/FUNDING.yml": {
+    "mtime": 1793505120.7210789,
+    "seen": 1793505233.1559663,
+    "ast_hash": "b2dbf2b8c19c31a3024401c5044db029",
+    "semantic_hash": "b2dbf2b8c19c31a3024401c5044db029",
+    "ast_empty": true
+  },
+  ".vscode/settings.json": {
+    "mtime": 1793505120.7246947,
+    "seen": 1793505233.1559663,
+    "ast_hash": "bdd93f7e92ea9f62e421d5ffdae51e52",
+    "semantic_hash": "bdd93f7e92ea9f62e421d5ffdae51e52",
+    "ast_empty": true
+  },
+  "reports/usdjpy-default-2022-2024-generated-ticks/plan.json": {
+    "mtime": 1793505121.679663,
+    "seen": 1793505233.1559663,
+    "ast_hash": "65a71d658a975c3b7d4778455f116783",
+    "semantic_hash": "65a71d658a975c3b7d4778455f116783",
+    "ast_empty": true
+  },
+  "reports/usdjpy-default-2025-generated-ticks/plan.json": {
+    "mtime": 1793505121.8796277,
+    "seen": 1793505233.1559663,
+    "ast_hash": "0fadd67f83b43836031a4abdf223ed6f",
+    "semantic_hash": "0fadd67f83b43836031a4abdf223ed6f",
+    "ast_empty": true
+  },
+  "reports/usdjpy-default-2026-real-ticks/plan.json": {
+    "mtime": 1793505122.0398512,
+    "seen": 1793505233.1559663,
+    "ast_hash": "3839167977b0d2ce3ff8bcde0b4e89fc",
+    "semantic_hash": "3839167977b0d2ce3ff8bcde0b4e89fc",
+    "ast_empty": true
+  },
+  "reports/xauusd-default-2022-2024-generated-ticks/plan.json": {
+    "mtime": 1793505122.7179115,
+    "seen": 1793505233.1559663,
+    "ast_hash": "0183208b597dc4f539ce604f98d40165",
+    "semantic_hash": "0183208b597dc4f539ce604f98d40165",
+    "ast_empty": true
+  },
+  "reports/xauusd-default-2025-generated-ticks/plan.json": {
+    "mtime": 1793505122.9513857,
+    "seen": 1793505233.1559663,
+    "ast_hash": "d3dcbf92b646a47e213caff36c6c0a94",
+    "semantic_hash": "d3dcbf92b646a47e213caff36c6c0a94",
+    "ast_empty": true
+  },
+  "reports/xauusd-default-2026-real-ticks/plan.json": {
+    "mtime": 1793505123.285389,
+    "seen": 1793505233.1559663,
+    "ast_hash": "2d6cba9136dfabd9f9bdeaee27bb45c6",
+    "semantic_hash": "2d6cba9136dfabd9f9bdeaee27bb45c6",
+    "ast_empty": true
+  },
+  "reports/xauusd-high-risk-2022-2024-generated-ticks/plan.json": {
+    "mtime": 1793505123.9784753,
+    "seen": 1793505233.1559663,
+    "ast_hash": "d481647a170fbe05b3b27df5bb2d99e4",
+    "semantic_hash": "d481647a170fbe05b3b27df5bb2d99e4",
+    "ast_empty": true
+  },
+  "reports/xauusd-high-risk-2025-generated-ticks/plan.json": {
+    "mtime": 1793505124.0232627,
+    "seen": 1793505233.1559663,
+    "ast_hash": "ce78373431c7db4c583454a64d1751cf",
+    "semantic_hash": "ce78373431c7db4c583454a64d1751cf",
+    "ast_empty": true
+  },
+  "reports/xauusd-high-risk-2026-real-ticks/plan.json": {
+    "mtime": 1793505124.0928292,
+    "seen": 1793505233.1559663,
+    "ast_hash": "c2fd482a2e9c77c26def1362ba006db2",
+    "semantic_hash": "c2fd482a2e9c77c26def1362ba006db2",
+    "ast_empty": true
+  },
+  "reports/xauusd-straddle-2022-2024-generated-ticks/plan.json": {
+    "mtime": 1793505124.3945727,
+    "seen": 1793505233.1559663,
+    "ast_hash": "8e9eeddc7b0ab99f1dad823c86bbe89f",
+    "semantic_hash": "8e9eeddc7b0ab99f1dad823c86bbe89f",
+    "ast_empty": true
+  },
+  "reports/xauusd-straddle-2025-generated-ticks/plan.json": {
+    "mtime": 1793505124.4699252,
+    "seen": 1793505233.1559663,
+    "ast_hash": "60013d9f6383b36dcf07c4e8d2f46f94",
+    "semantic_hash": "60013d9f6383b36dcf07c4e8d2f46f94",
+    "ast_empty": true
+  },
+  "reports/xauusd-straddle-2026-real-ticks/plan.json": {
+    "mtime": 1793505124.541612,
+    "seen": 1793505233.1559663,
+    "ast_hash": "47ac33e51a82cd4e7ae43fe79ee14ff6",
+    "semantic_hash": "47ac33e51a82cd4e7ae43fe79ee14ff6",
+    "ast_empty": true
+  },
+  "tools/backtest/nyao_backtest.py": {
+    "mtime": 1793505124.5482602,
+    "seen": 1793505233.1559663,
+    "ast_hash": "ca2141a4010153fa21195b171e2dd6c0",
+    "semantic_hash": "ca2141a4010153fa21195b171e2dd6c0"
+  },
+  "scripts/git-push.ps1": {
+    "mtime": 1793505394.3377311,
+    "seen": 1793505632.8930106,
+    "ast_hash": "4a6287563c23c6cd61346c811742b87c",
+    "semantic_hash": "4a6287563c23c6cd61346c811742b87c"
+  }
+}
