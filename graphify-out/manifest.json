@@ -108,5 +108,24 @@
     "seen": 1793505632.8930106,
     "ast_hash": "4a6287563c23c6cd61346c811742b87c",
     "semantic_hash": "4a6287563c23c6cd61346c811742b87c"
+  },
+  "reporting/config.template.json": {
+    "mtime": 1793559086.7804213,
+    "seen": 1793559278.592726,
+    "ast_hash": "eda2be9a3ef7a4bcea4208e6e1bccc51",
+    "semantic_hash": "eda2be9a3ef7a4bcea4208e6e1bccc51",
+    "ast_empty": true
+  },
+  "reporting/reporter.py": {
+    "mtime": 1793559086.9366498,
+    "seen": 1793559278.592726,
+    "ast_hash": "c6961a2f198f860c1799571ed59fc280",
+    "semantic_hash": "c6961a2f198f860c1799571ed59fc280"
+  },
+  "reporting/run-report.ps1": {
+    "mtime": 1793559204.0269666,
+    "seen": 1793559278.592726,
+    "ast_hash": "d61b87a288299bb9b762e05b1f2d046c",
+    "semantic_hash": "d61b87a288299bb9b762e05b1f2d046c"
   }
 }

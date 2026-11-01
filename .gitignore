@@ -22,3 +22,8 @@ graphify-out/20*/
 
 # Brain local cache
 .brain/
+
+# Trade Reporting Service secrets & previews
+reporting/config.json
+reporting/*.html
+

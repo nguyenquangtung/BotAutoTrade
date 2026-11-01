@@ -1,0 +1,4 @@
+MetaTrader5>=5.0.6231
+numpy>=1.26.0
+matplotlib>=3.8.0
+tzdata

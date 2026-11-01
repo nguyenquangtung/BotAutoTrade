@@ -76,6 +76,15 @@ Dự án là một hệ thống Auto Scalping định lượng xây dựng cho n
   - Điều khiển nạp cấu hình `.set`, khởi tạo MT5 ở chế độ nền với mức CPU affinity được giới hạn để tối ưu tài nguyên.
   - Thu thập dữ liệu log vốn (Equity/Balance log từng 5 phút) và trích xuất báo cáo HTML/CSV/Markdown.
 
+### 2.4. Trade Reporting Engine (`reporting/reporter.py`)
+- Dịch vụ trích xuất lịch sử lệnh và tự động gửi email báo cáo giao dịch (hàng ngày và hàng tháng):
+  - Kết nối trực tiếp vào MetaTrader 5 Terminal thông qua thư viện Python `MetaTrader5` (hỗ trợ cả Windows native và Linux Wine).
+  - Tự động lọc và tổng hợp các deal đóng vị thế (`DEAL_ENTRY_OUT`, `DEAL_ENTRY_INOUT`): tính toán Net P&L, Win Rate, Profit Factor, khối lượng (Lots), phân loại theo từng cặp Symbol.
+  - Kiểm tra trạng thái tài khoản thời gian thực: Balance, Equity, Margin, Free Margin, và danh sách các vị thế đang mở (Open Positions).
+  - Render giao diện HTML email tài chính chuyên nghiệp, chuẩn Anti-AI (không văn phong thừa thãi, tập trung vào số liệu KPI, bảng lệnh trực quan kèm mã màu).
+  - Gửi email tự động qua giao thức SMTP (Gmail TLS 587 hoặc SSL 465).
+  - Hỗ trợ các chế độ chạy: `--type daily` (trong ngày), `--type yesterday` (ngày hôm trước), `--type monthly` (tổng kết tháng), `--no-mail --save-html <path>` (chế độ xem trước).
+
 ---
 
 ## 3. Cấu Trúc Thư Mục
@@ -88,6 +97,7 @@ Dự án là một hệ thống Auto Scalping định lượng xây dựng cho n
   - `usdjpy-default.set`: Thiết lập giao dịch cặp USDJPY M5 (chạy song song cân bằng danh mục).
   - `xauusd-straddle.set`: Thiết lập cho Nyao Straddle M1.
 - `tools/backtest/`: Script tự động hóa kiểm thử chiến lược.
+- `reporting/`: Dịch vụ trích xuất lịch sử lệnh và gửi email báo cáo giao dịch tự động (`reporter.py`, `run-report.ps1`, `config.template.json`).
 - `reports/`: Dữ liệu và biểu đồ kết quả backtest chi tiết giai đoạn 2022 - 2026.
 - `scripts/`: Chứa script `git-push.ps1` hỗ trợ tự động hóa đẩy code và cập nhật graphify.
 
