@@ -129,9 +129,15 @@
     "semantic_hash": "70af43b3ffefe52380251ffb21c725a0"
   },
   "dashboard/service.py": {
-    "mtime": 1793590600.2642913,
-    "seen": 1793590671.6417255,
-    "ast_hash": "a80a36029409384cfb6df76fcf843fa8",
-    "semantic_hash": "a80a36029409384cfb6df76fcf843fa8"
+    "mtime": 1793614132.8782687,
+    "seen": 1793614217.2586367,
+    "ast_hash": "5f11f76dddfc05b80bb91b46839d21c8",
+    "semantic_hash": "5f11f76dddfc05b80bb91b46839d21c8"
+  },
+  "scripts/setup-vps-dashboard.sh": {
+    "mtime": 1793591075.2129729,
+    "seen": 1793614217.2627103,
+    "ast_hash": "f49d53f519b7b75811b732c46bfe2b93",
+    "semantic_hash": "f49d53f519b7b75811b732c46bfe2b93"
   }
 }
