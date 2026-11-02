@@ -10,21 +10,29 @@ import os
 import sys
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timezone
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    from backports.zoneinfo import ZoneInfo
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
+
+TZ_VN = ZoneInfo("Asia/Ho_Chi_Minh")
 
 try:
     import MetaTrader5 as mt5
 except ImportError:
     mt5 = None
 
+LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "watchdog.log")
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler("watchdog.log", encoding="utf-8")
+        logging.FileHandler(LOG_FILE, encoding="utf-8")
     ]
 )
 logger = logging.getLogger("WatchdogService")
@@ -65,9 +73,13 @@ def get_mt5_snapshot():
     positions = []
     if raw_positions:
         for p in raw_positions:
+            dt_vn = datetime.fromtimestamp(p.time, tz=timezone.utc).astimezone(TZ_VN)
+            dt_server = datetime.fromtimestamp(p.time, tz=timezone.utc)
             positions.append({
                 "ticket": p.ticket,
-                "time": datetime.fromtimestamp(p.time).strftime("%H:%M:%S"),
+                "time": dt_vn.strftime("%H:%M:%S"),
+                "time_vn": dt_vn.strftime("%H:%M:%S"),
+                "time_server": dt_server.strftime("%H:%M:%S"),
                 "symbol": p.symbol,
                 "type": "BUY" if p.type == 0 else "SELL",
                 "volume": round(p.volume, 2),
@@ -79,10 +91,12 @@ def get_mt5_snapshot():
                 "profit_usd": round(p.profit / 100.0, 4) if "c" in p.symbol.lower() else round(p.profit, 2)
             })
 
-    # Today's deals
-    now = datetime.now()
-    start_of_day = datetime(now.year, now.month, now.day, 0, 0, 0)
-    raw_deals = mt5.history_deals_get(start_of_day, now)
+    # Today's deals (since 00:00:00 Vietnam Time today)
+    now_vn = datetime.now(TZ_VN)
+    start_of_day_vn = datetime(now_vn.year, now_vn.month, now_vn.day, 0, 0, 0, tzinfo=TZ_VN)
+    start_of_day_utc = start_of_day_vn.astimezone(timezone.utc).replace(tzinfo=None)
+    now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+    raw_deals = mt5.history_deals_get(start_of_day_utc, now_utc)
     today_deals = []
     today_profit = 0.0
     if raw_deals:
@@ -90,10 +104,14 @@ def get_mt5_snapshot():
             # entry == 1 means DEAL_ENTRY_OUT (position closed)
             if d.entry == 1:
                 today_profit += d.profit
+                d_vn = datetime.fromtimestamp(d.time, tz=timezone.utc).astimezone(TZ_VN)
+                d_server = datetime.fromtimestamp(d.time, tz=timezone.utc)
                 today_deals.append({
                     "ticket": d.ticket,
                     "order": d.order,
-                    "time": datetime.fromtimestamp(d.time).strftime("%H:%M:%S"),
+                    "time": d_vn.strftime("%H:%M:%S"),
+                    "time_vn": d_vn.strftime("%H:%M:%S"),
+                    "time_server": d_server.strftime("%H:%M:%S"),
                     "symbol": d.symbol,
                     "type": "BUY" if d.type == 0 else "SELL",
                     "volume": round(d.volume, 2),
@@ -267,14 +285,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   </div>
 
   <div class="footer">
-    <div>Exness Real #<ACCOUNT_LOGIN> &bull; Tự động cập nhật mỗi 5 giây</div>
+    <div>Exness Real #<ACCOUNT_LOGIN> &bull; Múi giờ hiển thị: Giờ Việt Nam (GMT+7) &bull; Làm mới mỗi 5s</div>
     <div id="last-updated" style="margin-top: 4px; color: #64748b;">Cập nhật lần cuối: --</div>
   </div>
 
   <script>
     async function updateData() {
       try {
-        const res = await fetch('/api/data');
+        const basePath = window.location.pathname.endsWith('/') ? window.location.pathname : window.location.pathname + '/';
+        const res = await fetch(basePath + 'api/data');
         if (!res.ok) throw new Error("HTTP error " + res.status);
         const data = await res.json();
         
@@ -342,7 +361,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 <div class="pos-details">
                   <div>Vào: <strong>${p.price_open}</strong></div>
                   <div>Hiện tại: <strong>${p.price_current}</strong></div>
-                  <div>Giờ mở: <strong>${p.time}</strong></div>
+                  <div>Giờ mở: <strong>${p.time} (VN)</strong> <span style="font-size:10px; color:#64748b;">[${p.time_server} Exness]</span></div>
                   <div>SL: <strong>${p.sl > 0 ? p.sl : 'None'}</strong></div>
                   <div>TP: <strong>${p.tp > 0 ? p.tp : 'None'}</strong></div>
                   <div>Mã vé: <strong>#${p.ticket}</strong></div>
@@ -375,7 +394,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     ${profitPrefix}${d.profit_cent.toFixed(2)} USC
                   </div>
                 </div>
-                <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Đóng lúc: ${d.time} &bull; Order #${d.order}</div>
+                <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Đóng: <strong>${d.time} (VN)</strong> <span style="font-size:10px;">[${d.time_server} Exness]</span> &bull; Order #${d.order}</div>
               </div>
             `;
           });
@@ -398,12 +417,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
 class DashboardHTTPHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        if self.path == "/" or self.path == "/index.html":
+        clean_path = self.path.split("?")[0].rstrip("/")
+        if clean_path in ("", "/index.html", "/dashboard"):
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.end_headers()
             self.wfile.write(HTML_TEMPLATE.encode("utf-8"))
-        elif self.path == "/api/data":
+        elif clean_path.endswith("/api/data"):
             with STATE_LOCK:
                 resp = {
                     "connected": STATE["connected"],
@@ -419,7 +439,7 @@ class DashboardHTTPHandler(BaseHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             self.wfile.write(payload)
-        elif self.path == "/health":
+        elif clean_path.endswith("/health"):
             with STATE_LOCK:
                 st = {
                     "status": "UP" if STATE["connected"] else "DOWN",
