@@ -174,19 +174,14 @@
       "degree": 10
     },
     {
-      "id": "tools_backtest_nyao_backtest_parse_report",
-      "label": "parse_report()",
-      "degree": 8
-    },
-    {
       "id": "tools_backtest_nyao_backtest_cmd_report",
       "label": "cmd_report()",
       "degree": 8
     },
     {
-      "id": "tools_backtest_nyao_backtest_render_markdown",
-      "label": "render_markdown()",
-      "degree": 7
+      "id": "tools_backtest_nyao_backtest_parse_report",
+      "label": "parse_report()",
+      "degree": 8
     },
     {
       "id": "tools_backtest_nyao_backtest_compile_ea",
@@ -194,20 +189,25 @@
       "degree": 7
     },
     {
-      "id": "tools_backtest_nyao_backtest_set_tester_tab_graph",
-      "label": "set_tester_tab_graph()",
-      "degree": 6
+      "id": "tools_backtest_nyao_backtest_render_markdown",
+      "label": "render_markdown()",
+      "degree": 7
     },
     {
       "id": "tools_backtest_nyao_backtest_limit_processes",
       "label": "limit_processes()",
+      "degree": 6
+    },
+    {
+      "id": "tools_backtest_nyao_backtest_ea_version",
+      "label": "ea_version()",
       "degree": 6
     }
   ],
   "surprises": [
     {
       "source": "main()",
-      "target": "cmd_run()",
+      "target": "cmd_report()",
       "source_files": [
         "tools/backtest/nyao_backtest.py",
         "tools/backtest/nyao_backtest.py"
@@ -217,18 +217,7 @@
       "note": "Bridges community 0 \u2192 community 8"
     },
     {
-      "source": "cmd_run()",
-      "target": "close_terminal()",
-      "source_files": [
-        "tools/backtest/nyao_backtest.py",
-        "tools/backtest/nyao_backtest.py"
-      ],
-      "confidence": "EXTRACTED",
-      "relation": "calls",
-      "note": "Bridges community 1 \u2192 community 0"
-    },
-    {
-      "source": "cmd_run()",
+      "source": "cmd_report()",
       "target": "build_report()",
       "source_files": [
         "tools/backtest/nyao_backtest.py",
@@ -239,8 +228,8 @@
       "note": "Bridges community 0 \u2192 community 4"
     },
     {
-      "source": "cmd_run()",
-      "target": "compile_ea()",
+      "source": "cmd_report()",
+      "target": "safe()",
       "source_files": [
         "tools/backtest/nyao_backtest.py",
         "tools/backtest/nyao_backtest.py"
@@ -248,6 +237,17 @@
       "confidence": "EXTRACTED",
       "relation": "calls",
       "note": "Bridges community 0 \u2192 community 2"
+    },
+    {
+      "source": "cmd_run()",
+      "target": "subprocess",
+      "source_files": [
+        "tools/backtest/nyao_backtest.py",
+        ""
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "note": "Bridges community 0 \u2192 community 1"
     },
     {
       "source": "cmd_run()",
