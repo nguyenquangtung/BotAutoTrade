@@ -127,5 +127,11 @@
     "seen": 1793582717.7777798,
     "ast_hash": "70af43b3ffefe52380251ffb21c725a0",
     "semantic_hash": "70af43b3ffefe52380251ffb21c725a0"
+  },
+  "dashboard/service.py": {
+    "mtime": 1793590600.2642913,
+    "seen": 1793590671.6417255,
+    "ast_hash": "a80a36029409384cfb6df76fcf843fa8",
+    "semantic_hash": "a80a36029409384cfb6df76fcf843fa8"
   }
 }
