@@ -29,6 +29,7 @@ graphify-out/20*/
 *.env
 *.pem
 *.key
+backup_servnet/
 
 # Trade Reporting Service secrets & previews
 reporting/config.json
