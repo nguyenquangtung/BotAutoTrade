@@ -17,3 +17,4 @@ if ($PreviewOnly) {
     Write-Host "[INFO] Running report ($Type) and sending email via config.json..." -ForegroundColor Cyan
     python reporter.py --type $Type --config config.json --save-html report_preview.html
 }
+

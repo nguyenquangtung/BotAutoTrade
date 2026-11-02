@@ -23,6 +23,13 @@ graphify-out/20*/
 # Brain local cache
 .brain/
 
+# Environment variables & secrets
+.env
+.env.*
+*.env
+*.pem
+*.key
+
 # Trade Reporting Service secrets & previews
 reporting/config.json
 reporting/*.html
