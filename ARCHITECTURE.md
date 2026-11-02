@@ -85,6 +85,15 @@ Dự án là một hệ thống Auto Scalping định lượng xây dựng cho n
   - Gửi email tự động qua giao thức SMTP (Gmail TLS 587 hoặc SSL 465).
   - Hỗ trợ các chế độ chạy: `--type daily` (trong ngày), `--type yesterday` (ngày hôm trước), `--type monthly` (tổng kết tháng), `--no-mail --save-html <path>` (chế độ xem trước).
 
+### 2.5. Live Mobile Web Dashboard & Watchdog Service (`dashboard/service.py`)
+- **Kiến trúc Zero-Dependency**: Chạy tiến trình `dashboard/service.py` bằng Python chuẩn (`ThreadingHTTPServer`) trên cổng `8001`, không phụ thuộc framework bên ngoài.
+- **Mobile-Responsive UI**: Giao diện Dark theme tối ưu riêng cho màn hình điện thoại, tự động cập nhật qua AJAX polling 5 giây:
+  - Header: Trạng thái kết nối sàn Exness (Online/Offline) và Ping thời gian thực.
+  - Metrics: Balance, Equity, Floating PnL, Today Closed Profit (cả đơn vị USC và USD quy đổi).
+  - Open Positions: Chi tiết vị thế đang chạy (Symbol, Lot, Open Price, Current Price, SL, TP, PnL).
+  - Today Deals: Lịch sử các lệnh đã đóng trong ngày kèm thời gian và lãi/lỗ.
+- **Watchdog Engine**: Chạy song song trong background thread, kiểm tra kết nối `mt5.terminal_info().connected` mỗi 10 - 30 giây; phát hiện sự cố đứt kết nối kéo dài > 3 phút để ghi log cảnh báo và kích hoạt quy trình tự phục hồi.
+
 ---
 
 ## 3. Cấu Trúc Thư Mục
@@ -97,6 +106,7 @@ Dự án là một hệ thống Auto Scalping định lượng xây dựng cho n
   - `usdjpy-default.set`: Thiết lập giao dịch cặp USDJPY M5 (chạy song song cân bằng danh mục).
   - `xauusd-straddle.set`: Thiết lập cho Nyao Straddle M1.
 - `tools/backtest/`: Script tự động hóa kiểm thử chiến lược.
+- `dashboard/`: Dịch vụ Web Dashboard giao diện Mobile responsive & Watchdog engine tự phục hồi giám sát kết nối MT5 qua cổng 8001 (`service.py`).
 - `reporting/`: Dịch vụ trích xuất lịch sử lệnh và gửi email báo cáo giao dịch tự động (`reporter.py`, `run-report.ps1`, `config.template.json`).
 - `reports/`: Dữ liệu và biểu đồ kết quả backtest chi tiết giai đoạn 2022 - 2026.
 - `scripts/`: Chứa script `git-push.ps1` hỗ trợ tự động hóa đẩy code và cập nhật graphify.
