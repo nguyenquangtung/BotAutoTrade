@@ -31,10 +31,12 @@
 
 ## 3. Việc Đang Làm Dở Dang & Cần Làm Tiếp (Next Action Items)
 *Agent tiếp theo hãy nhận diện và làm tiếp theo thứ tự ưu tiên:*
-0. **[CHƯA DEPLOY - cần user xác nhận]** Bản review/fix 2026-11-03 chỉ nằm trong repo, VPS vẫn chạy bản cũ. Khi deploy:
-   - Copy `dashboard/` (gồm `index.html`, `metrics.py` mới) lên `/config/dashboard`, restart `service.py` (DB tự migrate). Server giờ chỉ nghe `127.0.0.1:8001` (đặt `DASHBOARD_HOST` nếu cần khác).
-   - Compile lại EA, nạp lại `xauusd-default.set` / `usdjpy-default.set` trên 2 chart. Input `$` trên tài khoản USC giờ là USD x100 (`MinimumEquity=10` = 1.000 USC). Mới: `DailyLossLimitPct=5`, `MaxEntrySecondsIntoBar=60`, `EnableDashboard=false`, DrawdownScope=Own thực sự tính theo lệnh của EA.
-   - Spread trên dashboard giờ là points thật (gấp 10 lần số cũ).
+0. **[Deploy 2026-11-03 10:12 VN]**
+   - Dashboard ĐÃ deploy: `service.py` mới chạy trên `127.0.0.1:8001` (port 8001 không còn truy cập từ Internet), DB đã migrate (fee, net_cent). Backup bản cũ: `~/mt5-trading/backups/20261103-100935/`.
+   - EA mới ĐÃ upload nhưng CHƯA gắn lên chart: `MQL5/Experts/nyao_scalper_v54_1.ex5` + `nyao_straddle_v1_7.ex5` (compile local build 6296; MetaEditor CLI qua Wine không tạo được ex5). Preset mới đã chép vào `MQL5/Presets/` (backup: `~/mt5-trading/backups/presets-20261103/`). Chart vẫn chạy `nyao_scalper.ex5` cũ.
+   - KHÔNG compile đè `nyao_scalper.ex5`: chart sẽ reload với input cũ `MinimumEquity=20` -> code mới hiểu 2.000 USC > equity -> EA đóng lệnh và tự gỡ.
+   - Việc cần user làm qua VNC: gỡ EA cũ trên 2 chart, gắn `nyao_scalper_v54_1` + Load preset tương ứng, rồi File > Profiles > Save (profile trên đĩa vẫn là mặc định EURUSD..., crash là mất chart EA).
+   - EA USDJPYc hiện KHÔNG thể vào lệnh: lot 0.01 lỗ 126.65 USC tại stop = 6.73% equity > MaxRiskPerTradePct 5% (cần ~2.533 USC).
 1. **[Trading Monitor / Optimization]**: Giám sát phản ứng vào lệnh trong phiên Âu (14:00 - 18:00 VN) và phiên Mỹ (19:00 - 23:00 VN) khi thanh khoản tăng cao và bộ lọc D1 EMA50 mở điều kiện.
 2. **[Reporting Engine]**: Cấu hình thông tin SMTP (Gmail App Password) vào file [`reporting/config.json`](reporting/config.json) nếu người dùng muốn kích hoạt email báo cáo tự động cuối ngày.
 3. **[Performance Analytics]**: Khi cơ sở dữ liệu tích lũy ít nhất ~100 lệnh đóng (20 lệnh chưa đủ ý nghĩa thống kê, dễ over-fit), so sánh với backtest rồi mới cân nhắc tinh chỉnh tỷ lệ Win Rate và Profit Factor để tinh chỉnh các tham số `TrendRangeBars`, `RiskPerTradePct` trong file set nếu cần.
