@@ -71,15 +71,15 @@
       "dashboard_analytics_db_analyticsdatabase_record_account_snapshot",
       "dashboard_analytics_db_analyticsdatabase_record_tick",
       "dashboard_analytics_db_analyticsdatabase_sync_closed_deals",
-      "dashboard_analytics_db_rationale_112",
-      "dashboard_analytics_db_rationale_137",
-      "dashboard_analytics_db_rationale_194",
-      "dashboard_analytics_db_rationale_213",
-      "dashboard_analytics_db_rationale_224",
-      "dashboard_analytics_db_rationale_324",
-      "dashboard_analytics_db_rationale_345",
-      "dashboard_analytics_db_rationale_359",
-      "dashboard_analytics_db_rationale_42"
+      "dashboard_analytics_db_rationale_115",
+      "dashboard_analytics_db_rationale_140",
+      "dashboard_analytics_db_rationale_197",
+      "dashboard_analytics_db_rationale_216",
+      "dashboard_analytics_db_rationale_227",
+      "dashboard_analytics_db_rationale_327",
+      "dashboard_analytics_db_rationale_348",
+      "dashboard_analytics_db_rationale_362",
+      "dashboard_analytics_db_rationale_45"
     ],
     "3": [
       "decimal",
@@ -226,19 +226,14 @@
       "degree": 10
     },
     {
-      "id": "tools_backtest_nyao_backtest_parse_report",
-      "label": "parse_report()",
-      "degree": 8
-    },
-    {
       "id": "tools_backtest_nyao_backtest_cmd_report",
       "label": "cmd_report()",
       "degree": 8
     },
     {
-      "id": "tools_backtest_nyao_backtest_compile_ea",
-      "label": "compile_ea()",
-      "degree": 7
+      "id": "tools_backtest_nyao_backtest_parse_report",
+      "label": "parse_report()",
+      "degree": 8
     },
     {
       "id": "tools_backtest_nyao_backtest_render_markdown",
@@ -246,8 +241,13 @@
       "degree": 7
     },
     {
-      "id": "tools_backtest_nyao_backtest_ea_version",
-      "label": "ea_version()",
+      "id": "tools_backtest_nyao_backtest_compile_ea",
+      "label": "compile_ea()",
+      "degree": 7
+    },
+    {
+      "id": "tools_backtest_nyao_backtest_fmt_pct",
+      "label": "fmt_pct()",
       "degree": 6
     }
   ],
@@ -275,37 +275,37 @@
       "note": "Bridges community 0 \u2192 community 5"
     },
     {
-      "source": "main()",
-      "target": "argparse",
+      "source": "load_config()",
+      "target": "json",
       "source_files": [
-        "tools/backtest/nyao_backtest.py",
+        "reporting/reporter.py",
         ""
       ],
       "confidence": "EXTRACTED",
       "relation": "calls",
-      "note": "Bridges community 3 \u2192 community 0"
-    },
-    {
-      "source": "build_report()",
-      "target": "save_plan()",
-      "source_files": [
-        "tools/backtest/nyao_backtest.py",
-        "tools/backtest/nyao_backtest.py"
-      ],
-      "confidence": "EXTRACTED",
-      "relation": "calls",
-      "note": "Bridges community 3 \u2192 community 7"
+      "note": "Bridges community 0 \u2192 community 3"
     },
     {
       "source": "cmd_run()",
-      "target": "compile_ea()",
+      "target": "clear_report()",
       "source_files": [
         "tools/backtest/nyao_backtest.py",
         "tools/backtest/nyao_backtest.py"
       ],
       "confidence": "EXTRACTED",
       "relation": "calls",
-      "note": "Bridges community 6 \u2192 community 5"
+      "note": "Bridges community 10 \u2192 community 5"
+    },
+    {
+      "source": "build_report()",
+      "target": "report_files()",
+      "source_files": [
+        "tools/backtest/nyao_backtest.py",
+        "tools/backtest/nyao_backtest.py"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "note": "Bridges community 10 \u2192 community 7"
     }
   ],
   "tokens": {
