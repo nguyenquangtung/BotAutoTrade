@@ -85,14 +85,18 @@ Dự án là một hệ thống Auto Scalping định lượng xây dựng cho n
   - Gửi email tự động qua giao thức SMTP (Gmail TLS 587 hoặc SSL 465).
   - Hỗ trợ các chế độ chạy: `--type daily` (trong ngày), `--type yesterday` (ngày hôm trước), `--type monthly` (tổng kết tháng), `--no-mail --save-html <path>` (chế độ xem trước).
 
-### 2.5. Live Mobile Web Dashboard & Watchdog Service (`dashboard/service.py`)
-- **Kiến trúc Zero-Dependency**: Chạy tiến trình `dashboard/service.py` bằng Python chuẩn (`ThreadingHTTPServer`) trên cổng `8001`, không phụ thuộc framework bên ngoài.
-- **Mobile-Responsive UI**: Giao diện Dark theme tối ưu riêng cho màn hình điện thoại, tự động cập nhật qua AJAX polling 5 giây:
+### 2.5. Live Mobile Web Dashboard, Watchdog & Database Analytics Service (`dashboard/service.py`, `dashboard/analytics_db.py`)
+- **Kiến trúc Zero-Dependency & SQLite3 Persistence**: Chạy tiến trình `dashboard/service.py` bằng Python chuẩn (`ThreadingHTTPServer`) trên cổng `8001`, tích hợp trực tiếp với cơ sở dữ liệu SQLite3 cục bộ (`dashboard/data/trading_analytics.db`):
+  - **Account Snapshots Table (`account_snapshots`)**: Thu thập snapshot tài sản (Balance, Equity, Margin, Free Margin, Floating PnL) mỗi 60 giây, phục vụ vẽ đường cong vốn (Equity Curve) và tính toán chính xác sụt giảm tài khoản (Max Drawdown).
+  - **Closed Deals History Table (`closed_deals`)**: Tự động đồng bộ toàn bộ lịch sử deal đóng (`DEAL_ENTRY_OUT`), chống trùng lặp qua `deal_ticket`, chuyển đổi tự động múi giờ Việt Nam (GMT+7) và quy đổi USC sang USD.
+  - **Tick History & Spread Monitoring Table (`tick_history`)**: Ghi nhận biến động giá bid/ask và tính toán spread thực tế theo point cho các cặp theo dõi (`XAUUSDc`, `USDJPYc`), tự động dọn dẹp (pruning) các tick cũ quá 3 ngày để cơ sở dữ liệu luôn gọn nhẹ (< 50MB).
+  - **Analytics Engine**: Tự động tính toán các chỉ số tài chính cốt lõi: Win Rate (%), Profit Factor, Net PnL, Max Drawdown, Lãi/Lỗ trung bình, và thống kê chi tiết theo từng symbol.
+- **Mobile-Responsive UI**: Giao diện Dark theme tối ưu riêng cho điện thoại, tự động cập nhật qua AJAX polling 5 giây:
   - Header: Trạng thái kết nối sàn Exness (Online/Offline) và Ping thời gian thực.
   - Metrics: Balance, Equity, Floating PnL, Today Closed Profit (cả đơn vị USC và USD quy đổi).
-  - Open Positions: Chi tiết vị thế đang chạy (Symbol, Lot, Open Price, Current Price, SL, TP, PnL).
-  - Today Deals: Lịch sử các lệnh đã đóng trong ngày kèm thời gian và lãi/lỗ.
-- **Watchdog Engine**: Chạy song song trong background thread, kiểm tra kết nối `mt5.terminal_info().connected` mỗi 10 - 30 giây; phát hiện sự cố đứt kết nối kéo dài > 3 phút để ghi log cảnh báo và kích hoạt quy trình tự phục hồi.
+  - Performance KPIs: Thẻ phân tích Win Rate, Profit Factor, Net PnL, Max Drawdown, cùng dữ liệu giá/spread trực tiếp của Vàng và Yên Nhật.
+  - Open Positions & Closed Deals: Chi tiết vị thế đang chạy và danh sách lệnh đã tất toán kèm mã vé và thời gian chuẩn GMT+7.
+- **Watchdog Engine**: Chạy song song trong background thread, kiểm tra kết nối `mt5.terminal_info().connected` mỗi 5 - 30 giây; phát hiện sự cố đứt kết nối kéo dài > 3 phút để ghi log cảnh báo và kích hoạt quy trình tự phục hồi.
 
 ---
 
