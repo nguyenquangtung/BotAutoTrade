@@ -2,10 +2,8 @@
   "communities": {
     "0": [
       "argparse",
-      "datetime",
       "email_mime_multipart",
       "email_mime_text",
-      "json",
       "metatrader5",
       "os",
       "reporting_reporter",
@@ -28,53 +26,82 @@
       "reporting_reporter_run_report",
       "reporting_reporter_send_email_report",
       "smtplib",
-      "tools_backtest_nyao_backtest_default_cpu_mask",
-      "tools_backtest_nyao_backtest_main",
-      "tools_backtest_nyao_backtest_save_plan"
+      "tools_backtest_nyao_backtest_default_cpu_mask"
     ],
     "1": [
-      "re",
-      "shutil",
-      "subprocess",
-      "tempfile",
-      "tools_backtest_nyao_backtest_close_terminal",
-      "tools_backtest_nyao_backtest_cmd_run",
-      "tools_backtest_nyao_backtest_common_files",
-      "tools_backtest_nyao_backtest_compile_ea",
-      "tools_backtest_nyao_backtest_ea_version",
-      "tools_backtest_nyao_backtest_git_info",
-      "tools_backtest_nyao_backtest_git_info_git",
-      "tools_backtest_nyao_backtest_month_range",
-      "tools_backtest_nyao_backtest_next_month",
-      "tools_backtest_nyao_backtest_plain_number",
-      "tools_backtest_nyao_backtest_powershell",
-      "tools_backtest_nyao_backtest_rationale_130",
-      "tools_backtest_nyao_backtest_rationale_240",
-      "tools_backtest_nyao_backtest_rationale_250",
-      "tools_backtest_nyao_backtest_rationale_363",
-      "tools_backtest_nyao_backtest_rationale_95",
-      "tools_backtest_nyao_backtest_read_text_any",
-      "tools_backtest_nyao_backtest_reopen_terminal",
-      "tools_backtest_nyao_backtest_safe",
-      "tools_backtest_nyao_backtest_set_tester_tab_graph",
-      "tools_backtest_nyao_backtest_terminal_running",
-      "tools_backtest_nyao_backtest_write_utf16"
+      "backports_zoneinfo",
+      "basehttprequesthandler",
+      "dashboard_analytics_db",
+      "dashboard_analytics_db_rationale_1",
+      "dashboard_service",
+      "dashboard_service_dashboardhttphandler",
+      "dashboard_service_dashboardhttphandler_do_get",
+      "dashboard_service_dashboardhttphandler_log_message",
+      "dashboard_service_get_mt5_snapshot",
+      "dashboard_service_rationale_1",
+      "dashboard_service_rationale_187",
+      "dashboard_service_rationale_66",
+      "dashboard_service_run_server",
+      "dashboard_service_threadedhttpserver",
+      "dashboard_service_watchdog_worker",
+      "datetime",
+      "http_server",
+      "httpserver",
+      "logging",
+      "socketserver",
+      "sqlite3",
+      "threading",
+      "threadingmixin",
+      "time",
+      "typing",
+      "zoneinfo"
     ],
     "2": [
-      "ctypes",
+      "any",
+      "connection",
+      "dashboard_analytics_db_analyticsdatabase",
+      "dashboard_analytics_db_analyticsdatabase_get_connection",
+      "dashboard_analytics_db_analyticsdatabase_get_equity_curve",
+      "dashboard_analytics_db_analyticsdatabase_get_latest_ticks",
+      "dashboard_analytics_db_analyticsdatabase_get_performance_summary",
+      "dashboard_analytics_db_analyticsdatabase_get_recent_closed_deals",
+      "dashboard_analytics_db_analyticsdatabase_init",
+      "dashboard_analytics_db_analyticsdatabase_init_db",
+      "dashboard_analytics_db_analyticsdatabase_prune_old_ticks",
+      "dashboard_analytics_db_analyticsdatabase_record_account_snapshot",
+      "dashboard_analytics_db_analyticsdatabase_record_tick",
+      "dashboard_analytics_db_analyticsdatabase_sync_closed_deals",
+      "dashboard_analytics_db_rationale_112",
+      "dashboard_analytics_db_rationale_137",
+      "dashboard_analytics_db_rationale_194",
+      "dashboard_analytics_db_rationale_213",
+      "dashboard_analytics_db_rationale_224",
+      "dashboard_analytics_db_rationale_324",
+      "dashboard_analytics_db_rationale_345",
+      "dashboard_analytics_db_rationale_359",
+      "dashboard_analytics_db_rationale_42"
+    ],
+    "3": [
       "decimal",
       "functools",
+      "json",
       "pathlib",
+      "sys",
       "tools_backtest_nyao_backtest",
+      "tools_backtest_nyao_backtest_cmd_report",
+      "tools_backtest_nyao_backtest_find_data_dir",
+      "tools_backtest_nyao_backtest_find_terminal",
+      "tools_backtest_nyao_backtest_main",
+      "tools_backtest_nyao_backtest_rationale_2",
+      "tools_backtest_nyao_backtest_rationale_40",
+      "tools_backtest_nyao_backtest_save_plan",
+      "tools_backtest_nyao_backtest_terminal_candidates"
+    ],
+    "4": [
       "tools_backtest_nyao_backtest_cell_text",
       "tools_backtest_nyao_backtest_ea_label",
       "tools_backtest_nyao_backtest_fmt_pct",
       "tools_backtest_nyao_backtest_fmt_pf",
-      "tools_backtest_nyao_backtest_kernel32",
-      "tools_backtest_nyao_backtest_limit_processes",
-      "tools_backtest_nyao_backtest_processentry32w",
-      "tools_backtest_nyao_backtest_rationale_169",
-      "tools_backtest_nyao_backtest_rationale_2",
       "tools_backtest_nyao_backtest_rationale_557",
       "tools_backtest_nyao_backtest_render_html",
       "tools_backtest_nyao_backtest_render_html_band",
@@ -86,76 +113,91 @@
       "tools_backtest_nyao_backtest_summary_values",
       "tools_backtest_nyao_backtest_tick_labels"
     ],
-    "3": [
-      "backports_zoneinfo",
-      "basehttprequesthandler",
-      "dashboard_service",
-      "dashboard_service_dashboardhttphandler",
-      "dashboard_service_dashboardhttphandler_do_get",
-      "dashboard_service_dashboardhttphandler_log_message",
-      "dashboard_service_get_mt5_snapshot",
-      "dashboard_service_rationale_1",
-      "dashboard_service_rationale_153",
-      "dashboard_service_rationale_56",
-      "dashboard_service_run_server",
-      "dashboard_service_threadedhttpserver",
-      "dashboard_service_watchdog_worker",
-      "http_server",
-      "httpserver",
-      "logging",
-      "socketserver",
-      "threading",
-      "threadingmixin",
-      "time",
-      "zoneinfo"
+    "5": [
+      "tempfile",
+      "tools_backtest_nyao_backtest_cmd_run",
+      "tools_backtest_nyao_backtest_common_files",
+      "tools_backtest_nyao_backtest_git_info",
+      "tools_backtest_nyao_backtest_git_info_git",
+      "tools_backtest_nyao_backtest_month_range",
+      "tools_backtest_nyao_backtest_next_month",
+      "tools_backtest_nyao_backtest_plain_number",
+      "tools_backtest_nyao_backtest_rationale_130",
+      "tools_backtest_nyao_backtest_rationale_240",
+      "tools_backtest_nyao_backtest_rationale_363",
+      "tools_backtest_nyao_backtest_set_tester_tab_graph",
+      "tools_backtest_nyao_backtest_write_utf16"
     ],
-    "4": [
-      "csv",
+    "6": [
       "html",
-      "tools_backtest_nyao_backtest_build_report",
-      "tools_backtest_nyao_backtest_clear_report",
-      "tools_backtest_nyao_backtest_equity_svg",
+      "re",
+      "shutil",
+      "tools_backtest_nyao_backtest_compile_ea",
+      "tools_backtest_nyao_backtest_ea_version",
       "tools_backtest_nyao_backtest_parse_report",
       "tools_backtest_nyao_backtest_parse_report_num",
       "tools_backtest_nyao_backtest_parse_report_val",
-      "tools_backtest_nyao_backtest_rationale_115",
-      "tools_backtest_nyao_backtest_rationale_121",
+      "tools_backtest_nyao_backtest_rationale_250",
+      "tools_backtest_nyao_backtest_rationale_455",
+      "tools_backtest_nyao_backtest_read_text_any",
+      "tools_backtest_nyao_backtest_safe"
+    ],
+    "7": [
+      "csv",
+      "tools_backtest_nyao_backtest_build_report",
+      "tools_backtest_nyao_backtest_equity_svg",
       "tools_backtest_nyao_backtest_rationale_368",
       "tools_backtest_nyao_backtest_rationale_401",
-      "tools_backtest_nyao_backtest_rationale_455",
       "tools_backtest_nyao_backtest_read_equity",
-      "tools_backtest_nyao_backtest_report_files",
       "tools_backtest_nyao_backtest_save_equity"
     ],
-    "5": [
-      "sys",
-      "tools_backtest_nyao_backtest_cmd_report",
-      "tools_backtest_nyao_backtest_find_data_dir",
-      "tools_backtest_nyao_backtest_find_terminal",
-      "tools_backtest_nyao_backtest_rationale_40",
-      "tools_backtest_nyao_backtest_terminal_candidates"
+    "8": [
+      "subprocess",
+      "tools_backtest_nyao_backtest_close_terminal",
+      "tools_backtest_nyao_backtest_powershell",
+      "tools_backtest_nyao_backtest_rationale_95",
+      "tools_backtest_nyao_backtest_reopen_terminal",
+      "tools_backtest_nyao_backtest_terminal_running"
     ],
-    "6": [
+    "9": [
+      "ctypes",
+      "tools_backtest_nyao_backtest_kernel32",
+      "tools_backtest_nyao_backtest_limit_processes",
+      "tools_backtest_nyao_backtest_processentry32w",
+      "tools_backtest_nyao_backtest_rationale_169"
+    ],
+    "10": [
+      "tools_backtest_nyao_backtest_clear_report",
+      "tools_backtest_nyao_backtest_rationale_115",
+      "tools_backtest_nyao_backtest_rationale_121",
+      "tools_backtest_nyao_backtest_report_files"
+    ],
+    "11": [
       "scripts_setup_vps_dashboard",
       "scripts_setup_vps_dashboard_sh__entry"
     ],
-    "7": [
+    "12": [
       "reporting_run_report"
     ],
-    "8": [
+    "13": [
       "scripts_git_push"
     ]
   },
   "cohesion": {
-    "0": 0.09425287356321839,
-    "1": 0.11692307692307692,
-    "2": 0.15942028985507245,
-    "3": 0.10952380952380952,
-    "4": 0.13333333333333333,
-    "5": 0.4666666666666667,
-    "6": 1.0,
-    "7": 1.0,
-    "8": 1.0
+    "0": 0.11076923076923077,
+    "1": 0.09846153846153846,
+    "2": 0.1422924901185771,
+    "3": 0.24175824175824176,
+    "4": 0.23076923076923078,
+    "5": 0.16666666666666666,
+    "6": 0.19696969696969696,
+    "7": 0.3333333333333333,
+    "8": 0.4666666666666667,
+    "9": 0.5,
+    "10": 0.5,
+    "11": 1.0,
+    "12": 1.0,
+    "13": 1.0
   },
   "gods": [
     {
@@ -167,6 +209,11 @@
       "id": "tools_backtest_nyao_backtest_build_report",
       "label": "build_report()",
       "degree": 14
+    },
+    {
+      "id": "dashboard_analytics_db_analyticsdatabase",
+      "label": "AnalyticsDatabase",
+      "degree": 13
     },
     {
       "id": "reporting_reporter_run_report",
@@ -189,19 +236,14 @@
       "degree": 8
     },
     {
-      "id": "tools_backtest_nyao_backtest_render_markdown",
-      "label": "render_markdown()",
-      "degree": 7
-    },
-    {
       "id": "tools_backtest_nyao_backtest_compile_ea",
       "label": "compile_ea()",
       "degree": 7
     },
     {
-      "id": "tools_backtest_nyao_backtest_fmt_pct",
-      "label": "fmt_pct()",
-      "degree": 6
+      "id": "tools_backtest_nyao_backtest_render_markdown",
+      "label": "render_markdown()",
+      "degree": 7
     },
     {
       "id": "tools_backtest_nyao_backtest_ea_version",
@@ -212,17 +254,6 @@
   "surprises": [
     {
       "source": "main()",
-      "target": "cmd_report()",
-      "source_files": [
-        "tools/backtest/nyao_backtest.py",
-        "tools/backtest/nyao_backtest.py"
-      ],
-      "confidence": "INFERRED",
-      "relation": "indirect_call",
-      "note": "Bridges community 0 \u2192 community 5"
-    },
-    {
-      "source": "main()",
       "target": "cmd_run()",
       "source_files": [
         "tools/backtest/nyao_backtest.py",
@@ -230,7 +261,29 @@
       ],
       "confidence": "INFERRED",
       "relation": "indirect_call",
-      "note": "Bridges community 0 \u2192 community 1"
+      "note": "Bridges community 3 \u2192 community 5"
+    },
+    {
+      "source": "cmd_run()",
+      "target": "default_cpu_mask()",
+      "source_files": [
+        "tools/backtest/nyao_backtest.py",
+        "tools/backtest/nyao_backtest.py"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "note": "Bridges community 0 \u2192 community 5"
+    },
+    {
+      "source": "main()",
+      "target": "argparse",
+      "source_files": [
+        "tools/backtest/nyao_backtest.py",
+        ""
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "note": "Bridges community 3 \u2192 community 0"
     },
     {
       "source": "build_report()",
@@ -241,29 +294,18 @@
       ],
       "confidence": "EXTRACTED",
       "relation": "calls",
-      "note": "Bridges community 0 \u2192 community 4"
+      "note": "Bridges community 3 \u2192 community 7"
     },
     {
-      "source": "build_report()",
-      "target": "render_html()",
+      "source": "cmd_run()",
+      "target": "compile_ea()",
       "source_files": [
         "tools/backtest/nyao_backtest.py",
         "tools/backtest/nyao_backtest.py"
       ],
       "confidence": "EXTRACTED",
       "relation": "calls",
-      "note": "Bridges community 2 \u2192 community 4"
-    },
-    {
-      "source": "tick_labels()",
-      "target": "re",
-      "source_files": [
-        "tools/backtest/nyao_backtest.py",
-        ""
-      ],
-      "confidence": "EXTRACTED",
-      "relation": "calls",
-      "note": "Bridges community 2 \u2192 community 1"
+      "note": "Bridges community 6 \u2192 community 5"
     }
   ],
   "tokens": {
