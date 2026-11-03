@@ -237,6 +237,6 @@ CloseAllOnLeverageChange=true
 EnablePersistState=true
 ResetSavedState=false
 EnableLogging=false
-; Headless VPS: no on-chart dashboard (no chart objects or Comment() redraws)
-EnableDashboard=false
+; On-chart dashboard on (viewed via VNC); set false to skip its redraw work on a headless VPS
+EnableDashboard=true
 TesterEquityLog=true
