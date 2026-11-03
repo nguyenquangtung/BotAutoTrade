@@ -35,3 +35,10 @@ backup_servnet/
 reporting/config.json
 reporting/*.html
 
+
+# Dashboard runtime data (SQLite DB, logs)
+dashboard/data/
+dashboard/*.log
+*.db
+*.db-wal
+*.db-shm

@@ -145,7 +145,7 @@ Hệ thống chạy 24/7 độc lập trên Cloud VPS tốc độ cao với đ�
 - **Image**: `mt5_trading:custom` (tích hợp sẵn Wine Staging 11.10, xdotool, symlinks).
 - **Thư mục triển khai**: `/home/<VPS_USER>/mt5-trading/` (Persistent storage tại `./config` bảo toàn thông tin tài khoản, preset và lịch sử giao dịch qua các lần reboot).
 - **Cổng dịch vụ & Truy cập**:
-  - `3000`: Web VNC GUI truy cập trực tiếp qua trình duyệt: `http://<VPS_IP>:3000` (User: `admin`, Pass: `<REDACTED>`).
+  - `3000`: Web VNC GUI truy cập trực tiếp qua trình duyệt: `http://<VPS_IP>:3000` (Basic Auth: thông tin đăng nhập lưu ngoài repo).
   - `8001`: Python/RPyC IPC socket (`mt5linux`) phục vụ report/bot notification service.
 - **Tự động hóa**: Cấu hình tự động khởi động MT5 Terminal cùng bot khi máy chủ khởi động lại (`restart: unless-stopped`).
 

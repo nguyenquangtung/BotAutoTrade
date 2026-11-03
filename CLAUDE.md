@@ -5,12 +5,13 @@
 - **Pairs Traded**: `XAUUSDc` (M5, Magic 6926268) & `USDJPYc` (M5, Magic 6926270).
 - **Broker**: Exness Real Account (`#<ACCOUNT_LOGIN>`, `Exness-MT5Real48`, Base Currency: USC - US Cent).
 - **Live VPS**: Google Cloud `<VPS_IP>` (Singapore), container `mt5_trading` running WineHQ Staging.
-- **Web Dashboard**: `http://<VPS_IP>:3000/dashboard/` (Basic Auth: `admin` / `<REDACTED>`).
+- **Web Dashboard**: `http://<VPS_IP>:3000/dashboard/` (Basic Auth: thông tin đăng nhập lưu ngoài repo, xem `.env` trên VPS).
 
 ## 2. Strict Security Rules
 > [!CAUTION]
 > 1. **Never perform destructive or modifying SSH/remote commands** on the VPS/live MT5 terminal without explicit approval from the user.
 > 2. **Always ask confirmation** before deploying, restarting services, or editing configurations on the remote server.
+> 3. **Never commit secrets** (VPS IP, account login, passwords). Real values live in the gitignored local file `.env.vps`; docs use placeholders like `<VPS_IP>`, `<ACCOUNT_LOGIN>`.
 
 ## 3. Multi-Agent 5-Step Workflow
 Every time code is changed or a commit is made:
@@ -26,3 +27,4 @@ Every time code is changed or a commit is made:
 - **Dashboard Service Syntax Check**: `python -m py_compile dashboard/service.py`
 - **Database Module Syntax Check**: `python -m py_compile dashboard/analytics_db.py`
 - **Daily Report Test**: `python reporting/reporter.py --type daily --no-mail --save-html reporting/preview_daily.html`
+
