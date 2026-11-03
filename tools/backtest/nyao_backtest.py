@@ -326,7 +326,8 @@ def cmd_run(a):
     try:
         for i, r in enumerate(runs, 1):
             clear_report(data_dir, r['report'])
-            (common_files() / EQUITY_LOG).unlink(missing_ok=True)
+            for f in equity_logs():
+                f.unlink(missing_ok=True)
             set_tester_tab_graph(data_dir)
             start = time.time()
             r['status'] = 'interrupted'                                  # until this run finishes
@@ -344,7 +345,11 @@ def cmd_run(a):
                 status = 'no report'
             r['status'] = status
             if status == 'done':
-                save_equity(common_files() / EQUITY_LOG, out / 'equity' / f'{r["period"]}_{safe(r["window"])}.csv')
+                logs = equity_logs()
+                if logs:                                                 # this run's EA wrote the newest one
+                    save_equity(max(logs, key=lambda f: f.stat().st_mtime), out / 'equity' / f'{r["period"]}_{safe(r["window"])}.csv')
+                    for f in logs:
+                        f.unlink(missing_ok=True)
             print(f'[{i}/{len(runs)}] {r["period"]} {r["window"]}: {status} in {time.time() - start:.0f}s', flush=True)
     finally:
         if proc is not None and proc.poll() is None:                    # stopped mid-run: end the tester first
@@ -356,12 +361,20 @@ def cmd_run(a):
 
 
 # --------------------------------------------------------------------------- balance & equity log
-EQUITY_LOG = 'nyao_equity.csv'      # written by the EA in the Strategy Tester (input TesterEquityLog, on by default)
+# Written by the EA in the Strategy Tester (input TesterEquityLog, on by default), one file per EA / symbol /
+# magic: nyao_equity_<scalper|straddle>_<symbol>_<magic>.csv (nyao_equity.csv = EA builds before that change)
+EQUITY_LOG_GLOB = 'nyao_equity*.csv'
 
 
 def common_files():
     """The terminals' shared Common/Files folder (FILE_COMMON writes from the tester land here)."""
     return Path(os.environ.get('APPDATA', '')) / 'MetaQuotes' / 'Terminal' / 'Common' / 'Files'
+
+
+def equity_logs():
+    """The EAs' balance & equity logs currently in Common/Files."""
+    folder = common_files()
+    return sorted(folder.glob(EQUITY_LOG_GLOB)) if folder.is_dir() else []
 
 
 def save_equity(src, dest):

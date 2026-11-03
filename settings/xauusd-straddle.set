@@ -58,7 +58,8 @@ DistanceUnit=1
 EntryDistance=1.0
 StopLoss=1.0
 TakeProfit=0.0
-MaxSpread=0.0
+; Spread cap: no pair is placed while the spread is above $0.50 (the scalper's gold cap, MaxSpreadPoints 500 on 3-decimal quotes)
+MaxSpread=0.50
 PendingExpiryBars=0
 ; Trailing Stop
 TrailStart=0.0

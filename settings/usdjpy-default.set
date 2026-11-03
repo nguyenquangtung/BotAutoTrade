@@ -54,6 +54,8 @@ PointInputDigits=0
 EnableBuyOrders=true
 EnableSellOrders=true
 EnableNewBarEntryOnly=true
+; Live: the entry decision of a bar is made within 60 s of its open, or that bar is skipped (no late entry after a wide spread or a restart)
+MaxEntrySecondsIntoBar=60
 MinEfficiencyToTrade=0.0
 RangeFilterPeriod=20
 EnableMaxSpreadFilter=true
@@ -159,7 +161,12 @@ MaxPauseMinutes=120
 MaxMinEquityTriggers=0
 ResetOnNewPeak=true
 TargetEquity=0.0
-MinimumEquity=20.0
+MinimumEquity=10.0
+; Cent account (USC): $ inputs are US dollars, applied x100 (MinimumEquity 10 = $10 = 1,000 USC; live account is ~$18.7, so 20 would stop it at once); false = read them as cents
+MoneyInputsInUSD=true
+; Daily loss limit: once this EA is down 5% of the day-start balance today (closed + floating), no new entries until the next server day
+DailyLossLimitPct=5.0
+DailyLossCloseAll=false
 ; 📈 Take Profit Settings
 EnableTakeProfit=true
 TPInputType=2
@@ -208,9 +215,12 @@ MinutesBeforeClose=30
 EnableNewsFilter=true
 NewsMinutesBefore=30
 NewsMinutesAfter=30
+BlockEntriesIfNewsUnavailable=false
 EnableLeveragePause=true
 CloseAllOnLeverageChange=true
 EnablePersistState=true
 ResetSavedState=false
 EnableLogging=false
+; Headless VPS: no on-chart dashboard (no chart objects or Comment() redraws)
+EnableDashboard=false
 TesterEquityLog=true

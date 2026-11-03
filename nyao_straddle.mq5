@@ -96,6 +96,9 @@ input group "Losing Streak Pause"
 input int LossStreakPause = 10;                           // Pause After This Many Losing Trades in a Row (0 = off)
 input int LossStreakPauseMinutes = 30;                    // Pause Length, Minutes
 
+input group "Equity Floor"
+input double MinEquityPercentOfStart = 0;                 // No New Pairs While Account Equity < This % of Equity at the EA's First Start (0 = off)
+
 input group "Other"
 input ENUM_ENTRY_MODE EntryMode = ENTRY_STRADDLE;          // Entry Mode (coin flip = research control test)
 input int CoinFlipSeed = 1;                               // Coin Flip Random Seed
@@ -117,6 +120,64 @@ int lossStreak = 0;                                       // losing trades in a 
 datetime pausedUntil = 0;                                 // no new pairs before this time
 datetime lastWarnBar = 0;
 uint lastStatusMs = 0;
+double startEquity = 0;                                   // equity when the EA first started (MinEquityPercentOfStart)
+datetime trailRetryAfter = 0;                             // a stop modification failed: wait before the next one
+int trailFails = 0;                                       // failures in a row (backoff 1, 2, 4 ... 30 s)
+
+// +------------------------------------------------------------------+
+// | Persistent state (live only): the losing streak, the pause and   |
+// | the start equity survive a restart. One file per account, symbol |
+// | and magic number in MQL5/Files/NyaoStraddle.                     |
+// +------------------------------------------------------------------+
+#define STATE_MAGIC 0x4E535431                            // "NST1"
+
+bool PersistActive() { return !MQLInfoInteger(MQL_TESTER) && !MQLInfoInteger(MQL_OPTIMIZATION); }
+
+string StateFile()
+{
+    string sym = _Symbol;
+    string bad[] = {"\\", "/", ":", "*", "?", "\"", "<", ">", "|"};
+    for(int i = 0; i < ArraySize(bad); i++) StringReplace(sym, bad[i], "_");
+    return StringFormat("NyaoStraddle\\state_%I64d_%s_%I64d.bin", AccountInfoInteger(ACCOUNT_LOGIN), sym, MagicNumber);
+}
+
+void SaveState()
+{
+    if(!PersistActive()) return;
+    FolderCreate("NyaoStraddle");
+    int h = FileOpen(StateFile(), FILE_WRITE | FILE_BIN);
+    if(h == INVALID_HANDLE) { Print("[STATE] Cannot write ", StateFile(), " error ", GetLastError()); return; }
+    FileWriteInteger(h, STATE_MAGIC);
+    FileWriteInteger(h, lossStreak);
+    FileWriteLong(h, (long)pausedUntil);
+    FileWriteDouble(h, startEquity);
+    FileClose(h);
+}
+
+void LoadState()
+{
+    if(!PersistActive() || !FileIsExist(StateFile())) return;
+    int h = FileOpen(StateFile(), FILE_READ | FILE_BIN);
+    if(h == INVALID_HANDLE) return;
+    if(FileReadInteger(h) == STATE_MAGIC)
+    {
+        lossStreak = FileReadInteger(h);
+        pausedUntil = (datetime)FileReadLong(h);
+        double eq = FileReadDouble(h);
+        if(eq > 0) startEquity = eq;
+        Print("[STATE] Restored: loss streak ", lossStreak,
+              pausedUntil > TimeCurrent() ? ", paused until " + TimeToString(pausedUntil) : "",
+              ", start equity ", DoubleToString(startEquity, 2));
+    }
+    FileClose(h);
+}
+
+// Equity floor: account equity below MinEquityPercentOfStart % of the start equity
+bool BelowEquityFloor()
+{
+    return MinEquityPercentOfStart > 0 && startEquity > 0
+        && AccountInfoDouble(ACCOUNT_EQUITY) < startEquity * MinEquityPercentOfStart / 100.0;
+}
 
 // +------------------------------------------------------------------+
 // | Helpers                                                          |
@@ -178,7 +239,20 @@ double LotSize(double slDistance)
     double maxVol = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
     if(step > 0) vol = MathFloor(vol / step + 1e-9) * step;
     vol = MathMax(minVol, MathMin(maxVol, vol));
-    return NormalizeDouble(vol, 2);
+    return NormalizeDouble(vol, VolumeDigits(step));
+}
+
+// Decimals of the volume step (0.01 -> 2, 0.1 -> 1, 1 -> 0, 0.001 -> 3)
+int VolumeDigits(double step)
+{
+    if(step <= 0) return 2;
+    int digits = 0;
+    while(digits < 8 && MathAbs(step - MathRound(step)) > 1e-9)
+    {
+        step *= 10.0;
+        digits++;
+    }
+    return digits;
 }
 
 ENUM_ORDER_TYPE_TIME PendingTimeType()
@@ -311,7 +385,10 @@ void PlacePair()
     if(MaxSpread > 0 && tick.ask - tick.bid > MaxSpread) return;
 
     double minDist = StopsLevelDistance() + _Point;
-    double entryDist = MathMax(EntryDistance * unit, minDist);
+    // The stop orders must also sit outside the freeze level, or the unfilled side could not be
+    // deleted when the other one fills (one-cancels-the-other) or the pair is withdrawn
+    double freezeDist = (double)SymbolInfoInteger(_Symbol, SYMBOL_TRADE_FREEZE_LEVEL) * _Point + _Point;
+    double entryDist = MathMax(EntryDistance * unit, MathMax(minDist, freezeDist));
     double slDist = StopLoss > 0 ? MathMax(StopLoss * unit, minDist) : 0;
     double tpDist = TakeProfit > 0 ? MathMax(TakeProfit * unit, minDist) : 0;
 
@@ -367,9 +444,31 @@ void PlacePair()
 // | spread, so the lock only has to cover slippage); the trailing    |
 // | stop then takes over from TrailStart.                            |
 // +------------------------------------------------------------------+
+// Stop modification with a retry backoff: a rejected modify (requote, busy server, frozen stop)
+// waits 1, 2, 4 ... 30 seconds instead of being resent on every tick
+bool ModifyStop(ulong ticket, double sl, double tp)
+{
+    uint rc = 0;
+    if(trade.PositionModify(ticket, sl, tp))
+        rc = trade.ResultRetcode();
+    if(rc == TRADE_RETCODE_DONE || rc == TRADE_RETCODE_NO_CHANGES)
+    {
+        trailFails = 0;
+        trailRetryAfter = 0;
+        return true;
+    }
+    trailFails++;
+    int wait = (int)MathMin(30, 1 << MathMin(trailFails - 1, 5));
+    trailRetryAfter = TimeCurrent() + wait;
+    if(trailFails == 1 || trailFails % 10 == 0)
+        PrintFormat("[TRAIL] Stop modify of #%I64u failed (retcode %u, %d in a row) - retry in %ds", ticket, trade.ResultRetcode(), trailFails, wait);
+    return false;
+}
+
 void TrailPositions()
 {
     if(TrailDistance <= 0 && BreakEvenTrigger <= 0) return;
+    if(TimeCurrent() < trailRetryAfter) return;
     MqlTick tick;
     if(!SymbolInfoTick(_Symbol, tick)) return;
     double minDist = StopsLevelDistance();
@@ -397,28 +496,28 @@ void TrailPositions()
             if(BreakEvenTrigger > 0 && !frozen && tick.bid - open >= BreakEvenTrigger * unit)
             {
                 double beSL = NormalizePrice(open + BreakEvenLock * unit);
-                if((sl == 0 || sl < beSL) && beSL < tick.bid - minDist && trade.PositionModify(ticket, beSL, tp)) sl = beSL;
+                if((sl == 0 || sl < beSL) && beSL < tick.bid - minDist && ModifyStop(ticket, beSL, tp)) sl = beSL;
             }
             if(TrailDistance <= 0) continue;
             if(tick.bid - open < TrailStart * unit) continue;
             double newSL = NormalizePrice(tick.bid - dist);
             if(sl > 0 && newSL < sl + step) continue;
             if(freeze > 0 && sl > 0 && tick.bid - sl <= freeze) continue;
-            trade.PositionModify(ticket, newSL, tp);
+            ModifyStop(ticket, newSL, tp);
         }
         else
         {
             if(BreakEvenTrigger > 0 && !frozen && open - tick.ask >= BreakEvenTrigger * unit)
             {
                 double beSL = NormalizePrice(open - BreakEvenLock * unit);
-                if((sl == 0 || sl > beSL) && beSL > tick.ask + minDist && trade.PositionModify(ticket, beSL, tp)) sl = beSL;
+                if((sl == 0 || sl > beSL) && beSL > tick.ask + minDist && ModifyStop(ticket, beSL, tp)) sl = beSL;
             }
             if(TrailDistance <= 0) continue;
             if(open - tick.ask < TrailStart * unit) continue;
             double newSL = NormalizePrice(tick.ask + dist);
             if(sl > 0 && newSL > sl - step) continue;
             if(freeze > 0 && sl > 0 && sl - tick.ask <= freeze) continue;
-            trade.PositionModify(ticket, newSL, tp);
+            ModifyStop(ticket, newSL, tp);
         }
     }
 }
@@ -443,6 +542,15 @@ void Manage()
     if(TimeCurrent() < pausedUntil)
     {
         if(pendings > 0) DeletePendings();
+        return;
+    }
+
+    // Equity floor (MinEquityPercentOfStart): no pair may wait to fill while equity is below it
+    if(BelowEquityFloor())
+    {
+        if(pendings > 0) DeletePendings();
+        WarnOncePerBar(StringFormat("[EQUITY FLOOR] Equity %.2f < %.1f%% of the start equity %.2f - no new pairs",
+                                    AccountInfoDouble(ACCOUNT_EQUITY), MinEquityPercentOfStart, startEquity));
         return;
     }
 
@@ -522,7 +630,7 @@ void LoadTradeStats()
             closed[k] = false;
             index.Add(pos, k);
         }
-        net[k] += HistoryDealGetDouble(d, DEAL_PROFIT) + HistoryDealGetDouble(d, DEAL_SWAP) + HistoryDealGetDouble(d, DEAL_COMMISSION);
+        net[k] += DealNet(d);
         long entry = HistoryDealGetInteger(d, DEAL_ENTRY);
         if(entry == DEAL_ENTRY_IN) ours[k] = HistoryDealGetInteger(d, DEAL_MAGIC) == MagicNumber;
         else if(entry == DEAL_ENTRY_OUT || entry == DEAL_ENTRY_OUT_BY) closed[k] = true;
@@ -531,18 +639,27 @@ void LoadTradeStats()
         if(ours[k] && closed[k]) AddTrade(net[k]);
 }
 
-// A position of this EA closed: add its net result (all of its deals) once it is fully closed
-void AddClosedPosition(long positionId)
+// Net money of one deal: profit, swap, commission and fee
+double DealNet(ulong d)
 {
-    if(!statsReady || PositionSelectByTicket(positionId)) return;
-    if(!HistorySelectByPosition(positionId)) return;
-    double net = 0;
-    for(int i = 0; i < HistoryDealsTotal(); i++)
-    {
-        ulong d = HistoryDealGetTicket(i);
-        net += HistoryDealGetDouble(d, DEAL_PROFIT) + HistoryDealGetDouble(d, DEAL_SWAP) + HistoryDealGetDouble(d, DEAL_COMMISSION);
-    }
-    AddTrade(net);
+    return HistoryDealGetDouble(d, DEAL_PROFIT) + HistoryDealGetDouble(d, DEAL_SWAP)
+         + HistoryDealGetDouble(d, DEAL_COMMISSION) + HistoryDealGetDouble(d, DEAL_FEE);
+}
+
+// Net result of a position over all of its deals (entry commission included); false = no history
+bool PositionNet(long positionId, double &net)
+{
+    net = 0;
+    if(!HistorySelectByPosition(positionId)) return false;
+    int n = HistoryDealsTotal();
+    for(int i = 0; i < n; i++) net += DealNet(HistoryDealGetTicket(i));
+    return n > 0;
+}
+
+// A position of this EA closed (fully): add its net result (all of its deals) to the statistics
+void AddClosedPosition(double net)
+{
+    if(statsReady) AddTrade(net);
 }
 
 // +------------------------------------------------------------------+
@@ -643,6 +760,7 @@ string DashboardGate(int pendings)
 {
     if(!volReady) return "waiting for ATR history";
     if(TimeCurrent() < pausedUntil) return StringFormat("losing-streak pause, %d min left", PauseMinutesLeft());
+    if(BelowEquityFloor()) return StringFormat("equity below %.1f%% of the start equity", MinEquityPercentOfStart);
     if(!InSession()) return "outside the trading sessions";
     if(RegimeMinATR > 0 && regimeATR < RegimeMinATR)
         return StringFormat("calm market: %s ATR %s < %s", TfName(RegimeTimeframe), Price(regimeATR), Price(RegimeMinATR));
@@ -707,6 +825,7 @@ void UpdateDashboard()
     if(!volReady) { status = "Waiting for ATR history"; statusColor = clrGray; }
     else if(!TradingAllowed()) { status = "No Entries (Algo Trading Off)"; statusColor = clrOrange; }
     else if(TimeCurrent() < pausedUntil) { status = StringFormat("PAUSED: losing streak (%dm)", PauseMinutesLeft()); statusColor = clrOrange; }
+    else if(BelowEquityFloor()) { status = "STOPPED (Equity Floor)"; statusColor = clrRed; }
     else if(!InSession()) { status = "Closed (Session)"; statusColor = clrGray; }
     DrawDashboardLabel("Status", "Status: " + status, startX, currentY, textsize, statusColor, true);
     currentY += lineHeight;
@@ -852,8 +971,9 @@ void UpdateDashboard()
 
 // +------------------------------------------------------------------+
 // | Backtest equity log (TesterEquityLog, Strategy Tester only)      |
-// | Same file as Nyao Scalper's (Common/Files/nyao_equity.csv), so   |
-// | tools/backtest/nyao_backtest.py draws its balance & equity       |
+// | Common/Files/nyao_equity_straddle_<symbol>_<magic>.csv, like     |
+// | Nyao Scalper's, so tools/backtest/nyao_backtest.py draws its     |
+// | balance & equity                                                 |
 // | charts. Never writes on a live or demo chart.                    |
 // +------------------------------------------------------------------+
 int equityLogHandle = INVALID_HANDLE;
@@ -873,7 +993,11 @@ void EquityLogTick()
     {
         equityLogTried = true;
         if(!TesterEquityLog || !MQLInfoInteger(MQL_TESTER)) return;
-        equityLogHandle = FileOpen("nyao_equity.csv", FILE_WRITE | FILE_TXT | FILE_ANSI | FILE_COMMON);
+        // One file per EA / symbol / magic (tools/backtest/nyao_backtest.py reads nyao_equity_*.csv)
+        string eqSym = _Symbol;
+        StringReplace(eqSym, "/", "_"); StringReplace(eqSym, "\\", "_");
+        equityLogHandle = FileOpen(StringFormat("nyao_equity_straddle_%s_%I64d.csv", eqSym, MagicNumber),
+                                   FILE_WRITE | FILE_TXT | FILE_ANSI | FILE_COMMON);
         if(equityLogHandle != INVALID_HANDLE) FileWriteString(equityLogHandle, "time,balance,equity,min_equity\r\n");
     }
     if(equityLogHandle == INVALID_HANDLE) return;
@@ -924,6 +1048,15 @@ int OnInit()
     trade.LogLevel(LOG_LEVEL_ERRORS);
     if(AccountInfoInteger(ACCOUNT_MARGIN_MODE) != ACCOUNT_MARGIN_MODE_RETAIL_HEDGING)
         Print("Note: netting account - if both orders fill in one jump, the two fills offset each other");
+    // Restore the losing streak / pause / start equity of the last run (live only), else start fresh
+    lossStreak = 0;
+    pausedUntil = 0;
+    startEquity = 0;
+    trailFails = 0;
+    trailRetryAfter = 0;
+    LoadState();
+    if(startEquity <= 0) startEquity = AccountInfoDouble(ACCOUNT_EQUITY);
+    SaveState();
     return INIT_SUCCEEDED;
 }
 
@@ -971,16 +1104,22 @@ void OnTradeTransaction(const MqlTradeTransaction &trans, const MqlTradeRequest 
         return;
     }
     if(entry != DEAL_ENTRY_OUT && entry != DEAL_ENTRY_OUT_BY) return;
-    double pnl = HistoryDealGetDouble(trans.deal, DEAL_PROFIT) + HistoryDealGetDouble(trans.deal, DEAL_SWAP)
-               + HistoryDealGetDouble(trans.deal, DEAL_COMMISSION);
+    double dealPnl = DealNet(trans.deal);
     long positionId = HistoryDealGetInteger(trans.deal, DEAL_POSITION_ID);
     if(magic != MagicNumber && !PositionWasOurs(positionId)) return;
-    AddClosedPosition(positionId);                        // dashboard statistics
-    lossStreak = pnl <= 0 ? lossStreak + 1 : 0;
+    // The trade's result is all of its deals (entry commission too), not only the closing one
+    // (this EA never closes partially; the stop closes the whole position)
+    double pnl;
+    if(!PositionNet(positionId, pnl)) pnl = dealPnl;
+    if(!PositionSelectByTicket(positionId)) AddClosedPosition(pnl);   // dashboard statistics, once fully closed
+    // A loss extends the streak, a win ends it, an exact break-even leaves it as it was
+    if(pnl < 0) lossStreak++;
+    else if(pnl > 0) lossStreak = 0;
     if(LossStreakPause > 0 && lossStreak >= LossStreakPause)
     {
         pausedUntil = TimeCurrent() + LossStreakPauseMinutes * 60;
         lossStreak = 0;
         DeletePendings();
     }
+    SaveState();
 }
