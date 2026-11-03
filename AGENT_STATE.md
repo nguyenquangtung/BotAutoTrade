@@ -37,6 +37,7 @@
    - KHÔNG compile đè `nyao_scalper.ex5`: chart sẽ reload với input cũ `MinimumEquity=20` -> code mới hiểu 2.000 USC > equity -> EA đóng lệnh và tự gỡ.
    - Việc cần user làm qua VNC: gỡ EA cũ trên 2 chart, gắn `nyao_scalper_v54_1` + Load preset tương ứng, rồi File > Profiles > Save (profile trên đĩa vẫn là mặc định EURUSD..., crash là mất chart EA).
    - EA USDJPYc hiện KHÔNG thể vào lệnh: lot 0.01 lỗ 126.65 USC tại stop = 6.73% equity > MaxRiskPerTradePct 5% (cần ~2.533 USC).
+   - **Quyết định user (2026-11-03): Phương án A - TẠM TẮT USDJPYc, chỉ chạy XAUUSDc.** Gỡ EA khỏi chart USDJPYc (không gắn v54_1). Chỉ bật lại (gắn `nyao_scalper_v54_1` + `usdjpy-default.set`) khi equity >= ~2.600 USC và user đồng ý. Lý do không để EA tự chặn: risk sizing sẽ tự mở lại ở ~2.533 USC với rủi ro ~5%/lệnh.
 1. **[Trading Monitor / Optimization]**: Giám sát phản ứng vào lệnh trong phiên Âu (14:00 - 18:00 VN) và phiên Mỹ (19:00 - 23:00 VN) khi thanh khoản tăng cao và bộ lọc D1 EMA50 mở điều kiện.
 2. **[Reporting Engine]**: Cấu hình thông tin SMTP (Gmail App Password) vào file [`reporting/config.json`](reporting/config.json) nếu người dùng muốn kích hoạt email báo cáo tự động cuối ngày.
 3. **[Performance Analytics]**: Khi cơ sở dữ liệu tích lũy ít nhất ~100 lệnh đóng (20 lệnh chưa đủ ý nghĩa thống kê, dễ over-fit), so sánh với backtest rồi mới cân nhắc tinh chỉnh tỷ lệ Win Rate và Profit Factor để tinh chỉnh các tham số `TrendRangeBars`, `RiskPerTradePct` trong file set nếu cần.

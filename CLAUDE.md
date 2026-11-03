@@ -2,7 +2,7 @@
 
 ## 1. Project Overview & Environment
 - **Project**: AutoScalping - Automated MetaTrader 5 Expert Advisor (`nyao_scalper v54.0`) & Ecosystem.
-- **Pairs Traded**: `XAUUSDc` (M5, Magic 6926268) & `USDJPYc` (M5, Magic 6926270).
+- **Pairs Traded**: `XAUUSDc` (M5, Magic 6926268). `USDJPYc` (M5, Magic 6926270) is PAUSED since 2026-11-03 until equity >= ~2,600 USC (min lot risks >5% per trade) - see `AGENT_STATE.md`.
 - **Broker**: Exness Real Account (`#<ACCOUNT_LOGIN>`, `Exness-MT5Real48`, Base Currency: USC - US Cent).
 - **Live VPS**: Google Cloud `<VPS_IP>` (Singapore), container `mt5_trading` running WineHQ Staging.
 - **Web Dashboard**: `http://<VPS_IP>:3000/dashboard/` (Basic Auth: thông tin đăng nhập lưu ngoài repo, xem `.env` trên VPS).
