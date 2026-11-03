@@ -1618,16 +1618,33 @@ double DealNetPL(ulong deal)
 
 // DrawdownScope = This EA: rebuild this EA's closed P/L and its best level from the deal history,
 // so a restart keeps a running drawdown (floating peaks before the restart are not known)
+// A deal of this EA in the selected history: our magic, or the exit of a position we opened
+// (a manual / close-by close carries magic 0). The history is in time order, so entries come
+// first; ownPositions collects the position ids opened with our magic along the way.
+bool IsOwnHistoryDeal(ulong deal, CHashMap<ulong, int> &ownPositions)
+{
+    if(HistoryDealGetString(deal, DEAL_SYMBOL) != _Symbol) return false;
+    ulong posId = (ulong)HistoryDealGetInteger(deal, DEAL_POSITION_ID);
+    if(HistoryDealGetInteger(deal, DEAL_MAGIC) == MagicNumber)
+    {
+        if(posId != 0 && !ownPositions.ContainsKey(posId)) ownPositions.Add(posId, 1);
+        return true;
+    }
+    long entry = HistoryDealGetInteger(deal, DEAL_ENTRY);
+    bool isOut = (entry == DEAL_ENTRY_OUT || entry == DEAL_ENTRY_OUT_BY || entry == DEAL_ENTRY_INOUT);
+    return isOut && posId != 0 && ownPositions.ContainsKey(posId);
+}
+
 void InitOwnPL()
 {
     ownClosedPL = 0; ownPeakPL = 0;
     if(!HistorySelect(0, TimeCurrent())) return;
+    CHashMap<ulong, int> ownPositions;
     int n = HistoryDealsTotal();
     for(int i = 0; i < n; i++)
     {
         ulong deal = HistoryDealGetTicket(i);
-        if(deal == 0 || HistoryDealGetString(deal, DEAL_SYMBOL) != _Symbol) continue;
-        if(HistoryDealGetInteger(deal, DEAL_MAGIC) != MagicNumber) continue;
+        if(deal == 0 || !IsOwnHistoryDeal(deal, ownPositions)) continue;
         ownClosedPL += DealNetPL(deal);
         ownPeakPL = MathMax(ownPeakPL, ownClosedPL);
     }
@@ -1667,18 +1684,22 @@ void InitDailyLoss()
     dailyStartBalance = AccountInfoDouble(ACCOUNT_BALANCE);
     if(DailyLossLimitPct <= 0) return;
 
-    // Balance at the day start = balance now minus every deal booked since (any EA, deposits too)
-    if(HistorySelect(dailyDayStart, now + 86400))
+    // Balance at the day start = balance now minus every deal booked since (any EA, deposits too).
+    // The history starts 30 days earlier so the entries of positions opened before today are known:
+    // a manual close of our position (magic 0) today still counts as this EA's P/L.
+    if(HistorySelect(dailyDayStart - 30 * 86400, now + 86400))
     {
+        CHashMap<ulong, int> ownPositions;
         int n = HistoryDealsTotal();
         for(int i = 0; i < n; i++)
         {
             ulong deal = HistoryDealGetTicket(i);
             if(deal == 0) continue;
+            bool own = IsOwnHistoryDeal(deal, ownPositions);   // also records our entries before today
+            if((datetime)HistoryDealGetInteger(deal, DEAL_TIME) < dailyDayStart) continue;
             double net = DealNetPL(deal);
             dailyStartBalance -= net;
-            if(HistoryDealGetString(deal, DEAL_SYMBOL) == _Symbol && HistoryDealGetInteger(deal, DEAL_MAGIC) == MagicNumber)
-                dailyRealized += net;
+            if(own) dailyRealized += net;
         }
     }
     string flag = DailyLossFlagName();
