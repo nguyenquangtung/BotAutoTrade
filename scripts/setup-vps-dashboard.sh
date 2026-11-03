@@ -20,7 +20,19 @@ else
 fi
 '
 
-# 2. Check if service.py is running; if not, launch it via nohup
+# 2. Sanity check: service.py loads index.html from its own folder (/config/dashboard).
+#    This script does not copy files: deploy the whole dashboard/ folder
+#    (service.py, analytics_db.py, metrics.py, index.html) to /config/dashboard first.
+docker exec mt5_trading bash -c '
+for f in service.py analytics_db.py metrics.py index.html; do
+  [ -f "/config/dashboard/$f" ] || echo "[WARN] /config/dashboard/$f is missing - copy the dashboard/ folder first"
+done
+'
+
+# 3. Check if service.py is running; if not, launch it via nohup.
+#    service.py binds to 127.0.0.1:8001 by default (DASHBOARD_HOST/DASHBOARD_PORT env);
+#    it is reachable only through the Nginx /dashboard/ proxy above.
+#    After updating the Python files, kill the old service.py process so this step restarts it.
 docker exec -u abc mt5_trading bash -c '
 if ! ps aux | grep -v grep | grep -q "service.py"; then
   echo "[INFO] Starting dashboard/service.py in background..."
@@ -29,7 +41,7 @@ if ! ps aux | grep -v grep | grep -q "service.py"; then
 fi
 '
 
-# 3. Test endpoint
+# 4. Test endpoint
 docker exec mt5_trading curl -s http://127.0.0.1:8001/health || true
 echo "[DONE] Dashboard & Watchdog setup finished."
 

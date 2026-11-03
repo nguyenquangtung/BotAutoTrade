@@ -18,6 +18,19 @@ try:
 except ImportError:
     from backports.zoneinfo import ZoneInfo
 
+# Shared net-P&L definition (dashboard/metrics.py): net = profit + commission + swap + fee.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "dashboard"))
+try:
+    from metrics import deal_net, classify
+except ImportError:  # dashboard/ not deployed next to reporting/ -> identical fallback definition
+    BE_THRESHOLD = 0.05
+
+    def deal_net(profit, commission=0.0, swap=0.0, fee=0.0):
+        return float(profit or 0.0) + float(commission or 0.0) + float(swap or 0.0) + float(fee or 0.0)
+
+    def classify(net, threshold=BE_THRESHOLD):
+        return "win" if net > threshold else ("loss" if net < -threshold else "be")
+
 # Try importing MetaTrader5 (available in Windows Python / Wine)
 try:
     import MetaTrader5 as mt5
@@ -144,6 +157,7 @@ def fetch_deals_history(from_date, to_date, tz):
     total_profit = 0.0
     total_commission = 0.0
     total_swap = 0.0
+    total_fee = 0.0
     gross_profit = 0.0
     gross_loss = 0.0
     wins = 0
@@ -159,16 +173,19 @@ def fetch_deals_history(from_date, to_date, tz):
         deal_profit = d.profit
         deal_comm = d.commission
         deal_swap = d.swap
-        net_deal_profit = deal_profit + deal_comm + deal_swap
+        deal_fee = getattr(d, "fee", 0.0) or 0.0
+        net_deal_profit = deal_net(deal_profit, deal_comm, deal_swap, deal_fee)
+        outcome = classify(net_deal_profit)
 
         total_profit += net_deal_profit
         total_commission += deal_comm
         total_swap += deal_swap
+        total_fee += deal_fee
 
-        if net_deal_profit > 0:
+        if outcome == "win":
             wins += 1
             gross_profit += net_deal_profit
-        elif net_deal_profit < 0:
+        elif outcome == "loss":
             losses += 1
             gross_loss += abs(net_deal_profit)
 
@@ -179,7 +196,7 @@ def fetch_deals_history(from_date, to_date, tz):
         symbol_stats[sym]["trades"] += 1
         symbol_stats[sym]["profit"] += net_deal_profit
         symbol_stats[sym]["volume"] += d.volume
-        if net_deal_profit > 0:
+        if outcome == "win":
             symbol_stats[sym]["wins"] += 1
 
         deal_time = datetime.fromtimestamp(d.time, tz=timezone.utc).astimezone(tz)
@@ -195,6 +212,7 @@ def fetch_deals_history(from_date, to_date, tz):
             "raw_profit": deal_profit,
             "commission": deal_comm,
             "swap": deal_swap,
+            "fee": deal_fee,
             "comment": d.comment
         })
 
@@ -212,7 +230,8 @@ def fetch_deals_history(from_date, to_date, tz):
         "gross_loss": gross_loss,
         "profit_factor": profit_factor,
         "commission": total_commission,
-        "swap": total_swap
+        "swap": total_swap,
+        "fee": total_fee
     }
 
     return {
@@ -404,7 +423,7 @@ def render_html_report(report_type, account, data, open_positions, start_dt, end
 
                 <!-- Footer -->
                 <div style="margin-top: 32px; padding-top: 16px; border-top: 1px solid #f1f5f9; font-size: 11px; color: #94a3b8; text-align: center;">
-                    Generated automatically by Nyao Scalper Reporting Engine &bull; Host: <VPS_IP> (asia-southeast1-c) &bull; Latency: ~1.5ms
+                    Generated automatically by Nyao Scalper Reporting Engine &bull; Net P&amp;L = profit + commission + swap + fee
                 </div>
             </div>
         </div>
@@ -495,8 +514,8 @@ def run_report(report_type="daily", config_path="config.json", save_html_path=No
     else:
         print("[WARN] Proceeding with placeholder account data (MT5 offline or non-Windows host).")
         account = {
-            "login": 464158177,
-            "server": "Exness-MT5Trial",
+            "login": "N/A",
+            "server": "MT5 offline",
             "currency": "USD",
             "balance": 1000.0,
             "equity": 1000.0
