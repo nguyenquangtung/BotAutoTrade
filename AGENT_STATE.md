@@ -46,6 +46,7 @@
 ---
 
 ## 4. Nhật Ký Thay Đổi Của Các Agent (Changelog)
+- **2026-11-03 (Claude Code):** Thiết kế lại `dashboard/index.html` theo skill ui-ux-pro-max + frontend-design: dải trạng thái + độ mới dữ liệu (cảnh báo khi cũ/mất kết nối, nút Thử lại), equity lớn + đường equity (từ /api/analytics), thanh khoảng cách tới SL + lỗ tối đa ước tính, lịch sử ghi đúng chiều vị thế, cho phép zoom, chữ >= 13px, số tabular, tương phản >= 4.5:1. CHƯA deploy (service.py nạp index.html lúc khởi động -> cần copy + restart service).
 - **2026-11-03 (Claude Code):** Review toàn bộ source + fix: xóa IP/mật khẩu/số tài khoản khỏi tài liệu (giá trị thật trong `.env.vps` local, gitignored); EA: đơn vị Cent, giới hạn lỗ ngày, DrawdownScope=Own, freeze level, DONE_PARTIAL, Discord qua OnTimer, cache ReadTrend/floating PL, sửa macro LogPrint, straddle lưu trạng thái pause; Dashboard: bind 127.0.0.1, Net PnL gồm commission/swap/fee (`dashboard/metrics.py`), spread theo point thật, sync deal tăng dần, 1 kết nối SQLite, log xoay vòng, DD theo equity, HTML tách ra `dashboard/index.html`; `git-push.ps1` không còn `git add .` và chặn commit secret.
 - **2026-11-03 (Antigravity):** Thiết lập `multi-agent-sync` (AGENT_STATE.md, CLAUDE.md, .agent/rules/project-context.md, git-push workflow).
 - **2026-11-03 (Antigravity):** Triển khai SQLite Analytics Engine (`analytics_db.py`) và tích hợp KPI cards / Spreads lên Web Dashboard di động.
