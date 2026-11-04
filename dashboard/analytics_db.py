@@ -35,6 +35,17 @@ DEFAULT_DB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data"
 DEFAULT_DB_PATH = os.environ.get("ANALYTICS_DB_PATH") or os.path.join(DEFAULT_DB_DIR, "trading_analytics.db")
 
 
+def _thin(rows: list, max_points: int) -> list:
+    """Keep at most max_points rows, evenly spaced, always including the last one."""
+    n = len(rows)
+    if max_points <= 0 or n <= max_points:
+        return list(rows)
+    step = n / float(max_points)
+    picked = [rows[int(i * step)] for i in range(max_points - 1)]
+    picked.append(rows[-1])
+    return picked
+
+
 def _empty_summary() -> Dict[str, Any]:
     return {
         "total_trades": 0,
@@ -457,6 +468,19 @@ class AnalyticsDatabase:
             for r in reversed(rows)
         ]
 
+    def get_equity_curve_since(self, since_epoch: int, max_points: int = 720) -> List[Dict[str, Any]]:
+        """Equity snapshots since since_epoch, evenly thinned to at most max_points (last point kept)."""
+        with self._lock:
+            rows = self._conn.execute("""
+                SELECT timestamp_vn, balance, equity, floating_pnl
+                FROM account_snapshots WHERE timestamp_epoch >= ? ORDER BY id ASC
+            """, (int(since_epoch),)).fetchall()
+        rows = _thin(rows, max_points)
+        return [
+            {"time": r["timestamp_vn"], "balance": r["balance"], "equity": r["equity"], "floating": r["floating_pnl"]}
+            for r in rows
+        ]
+
     def get_recent_closed_deals(self, limit: int = 50) -> List[Dict[str, Any]]:
         """Returns closed deals ordered by deal time desc."""
         with self._lock:
@@ -499,3 +523,22 @@ class AnalyticsDatabase:
                 ORDER BY minute_epoch ASC
             """, (symbol, int(since_epoch))).fetchall()
         return [dict(r) for r in rows]
+
+    def get_spread_series(self, symbol: str, since_epoch: int, max_points: int = 360) -> List[Dict[str, Any]]:
+        """Per-minute spread aggregates merged into at most max_points buckets (avg of avgs, max of maxes)."""
+        rows = self.get_spread_stats(symbol, since_epoch)
+        if not rows:
+            return []
+        n = len(rows)
+        size = max(1, -(-n // max_points))  # ceil(n / max_points) minutes per bucket
+        out = []
+        for i in range(0, n, size):
+            chunk = rows[i:i + size]
+            samples = sum(r["samples"] for r in chunk) or 1
+            out.append({
+                "t": datetime.fromtimestamp(chunk[0]["minute_epoch"], tz=timezone.utc).astimezone(TZ_VN).strftime("%Y-%m-%d %H:%M"),
+                "avg": round(sum(r["spread_avg"] * r["samples"] for r in chunk) / samples, 1),
+                "max": max(r["spread_max"] for r in chunk),
+                "min": min(r["spread_min"] for r in chunk),
+            })
+        return out

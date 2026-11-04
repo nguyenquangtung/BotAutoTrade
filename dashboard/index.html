@@ -11,37 +11,50 @@
   <style>
     :root {
       --ink: #070b14;        /* page */
-      --panel: #0e1525;      /* raised surfaces */
+      --panel: #0b1120;      /* panel surface */
+      --raise: #111a2c;      /* hover / segmented control */
       --line: #1d2940;       /* hairlines */
       --text: #e8edf5;
       --muted: #9aa8bd;      /* 8:1 on --ink */
-      --faint: #7d8ba1;      /* secondary meta, >= 4.5:1 on --ink and --panel */
+      --faint: #7d8ba1;      /* >= 4.5:1 on --ink and --panel */
       --gold: #e2b44c;       /* the instrument: XAU */
       --up: #34d399;
       --down: #f87171;
       --warn: #fbbf24;
-      --radius-lg: 14px;
-      --radius-sm: 8px;
+      --radius: 8px;
       --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { -webkit-text-size-adjust: 100%; }
     body {
       background: var(--ink); color: var(--text); font-family: var(--font);
-      font-size: 15px; line-height: 1.5;
-      font-variant-numeric: tabular-nums;
-      padding: max(14px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
-               max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+      font-size: 15px; line-height: 1.5; font-variant-numeric: tabular-nums;
     }
-    main { max-width: 560px; margin: 0 auto; }
-    h2 { font-size: 15px; font-weight: 600; color: var(--text); }
+    h2 { font-size: 14px; font-weight: 600; }
     .up { color: var(--up); }
     .down { color: var(--down); }
+    .warn-t { color: var(--warn); }
     .muted { color: var(--muted); }
+    .faint { color: var(--faint); }
+    .gold { color: var(--gold); }
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    button {
+      font: inherit; font-weight: 600; color: var(--ink); background: var(--text); border: 0; border-radius: var(--radius);
+      min-height: 44px; min-width: 44px; padding: 0 16px; cursor: pointer; flex: none; transition: opacity .15s ease, background .15s ease;
+    }
+    button:active { opacity: .8; }
+    button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
-    /* Status strip: is it live, is the data fresh */
-    .status { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; }
+    /* ---------- Shell: panels separated by 1px hairlines ---------- */
+    .app { display: grid; gap: 1px; background: var(--line); min-height: 100vh; }
+    .panel { background: var(--ink); padding: 16px; min-width: 0; }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; min-height: 28px; }
+    .count { color: var(--muted); font-size: 13px; }
+    .empty { color: var(--muted); font-size: 14px; padding: 12px 0; }
+
+    /* Top bar */
+    .top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+           padding-top: max(12px, env(safe-area-inset-top)); padding-bottom: 12px; }
     .status-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
     .pulse { width: 10px; height: 10px; border-radius: 50%; background: var(--faint); flex: none; }
     .pulse.live { background: var(--up); box-shadow: 0 0 0 4px rgba(52, 211, 153, .15); }
@@ -49,106 +62,181 @@
     .pulse.dead { background: var(--down); box-shadow: 0 0 0 4px rgba(248, 113, 113, .15); }
     .status-text { font-weight: 600; }
     .status-age { color: var(--muted); font-size: 13px; white-space: nowrap; }
-    .instrument { color: var(--gold); font-weight: 600; font-size: 13px; letter-spacing: .02em; }
-
+    .brand { font-weight: 700; }
+    .brand span { color: var(--gold); font-weight: 600; margin-left: 8px; }
+    .top-meta { display: flex; gap: 20px; color: var(--muted); font-size: 13px; flex-wrap: wrap; }
+    .top-meta b { color: var(--text); font-weight: 600; }
     .alert {
-      display: none; margin-top: 10px; padding: 12px 14px; border-radius: var(--radius-sm);
-      background: rgba(248, 113, 113, .1); border: 1px solid rgba(248, 113, 113, .35); color: var(--text); font-size: 14px;
+      display: none; width: 100%; padding: 10px 14px; border-radius: var(--radius);
+      background: rgba(248, 113, 113, .1); border: 1px solid rgba(248, 113, 113, .35); font-size: 14px;
       align-items: center; justify-content: space-between; gap: 12px;
     }
     .alert.show { display: flex; }
     .alert.warn { background: rgba(251, 191, 36, .08); border-color: rgba(251, 191, 36, .35); }
-    button {
-      font: inherit; font-weight: 600; color: var(--ink); background: var(--text); border: 0; border-radius: var(--radius-sm);
-      min-height: 44px; min-width: 44px; padding: 0 16px; cursor: pointer; flex: none;
-      transition: opacity .15s ease;
-    }
-    button:active { opacity: .8; }
-    button:focus-visible, a:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
-    /* Hero: equity and its curve - the one bold element */
-    .hero { margin-top: 18px; }
-    .hero-label { color: var(--muted); font-size: 14px; }
-    .hero-value { font-size: 40px; font-weight: 700; line-height: 1.1; letter-spacing: -.01em; margin-top: 2px; }
-    .hero-value small { font-size: 17px; font-weight: 500; color: var(--muted); margin-left: 6px; letter-spacing: 0; }
-    .hero-usd { color: var(--muted); font-size: 15px; margin-top: 2px; }
-    .hero-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 16px; }
-    .stat-label { color: var(--muted); font-size: 13px; }
-    .stat-value { font-size: 17px; font-weight: 600; }
-    .stat-sub { color: var(--faint); font-size: 13px; }
-    .curve { margin-top: 16px; height: 96px; position: relative; }
-    .curve svg { width: 100%; height: 100%; display: block; overflow: visible; }
-    .curve-empty { position: absolute; inset: 0; display: flex; align-items: center; color: var(--faint); font-size: 13px; }
-    .curve-caption { display: flex; justify-content: space-between; gap: 12px; color: var(--faint); font-size: 13px; margin-top: 6px; }
-    #curve-range { white-space: nowrap; }
+    /* KPI strip */
+    .kpi { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px 16px; }
+    .kpi-hero { grid-column: 1 / -1; }
+    .label { color: var(--muted); font-size: 13px; }
+    .hero-value { font-size: 40px; font-weight: 700; line-height: 1.1; letter-spacing: -.01em; }
+    .hero-value small { font-size: 16px; font-weight: 500; color: var(--muted); margin-left: 6px; letter-spacing: 0; }
+    .value { font-size: 18px; font-weight: 600; line-height: 1.3; }
+    .sub { color: var(--faint); font-size: 13px; }
 
-    section { margin-top: 28px; }
-    .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
-    .count { color: var(--muted); font-size: 14px; }
+    /* Segmented range control */
+    .seg { display: inline-flex; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 2px; }
+    .seg button { background: transparent; color: var(--muted); min-height: 36px; min-width: 52px; padding: 0 10px; font-size: 13px; border-radius: 6px; }
+    .seg button[aria-pressed="true"] { background: var(--raise); color: var(--text); }
+    .seg button:hover { color: var(--text); }
 
-    /* Open position with its distance to the stop */
-    .position { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 14px 16px; }
-    .position + .position { margin-top: 10px; }
+    /* Charts */
+    .chart { position: relative; height: 180px; }
+    .chart svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .chart-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--faint); font-size: 13px; text-align: center; padding: 0 16px; }
+    .tip { position: absolute; pointer-events: none; background: var(--raise); border: 1px solid var(--line); border-radius: 6px;
+           padding: 6px 10px; font-size: 13px; white-space: nowrap; display: none; z-index: 2; }
+    .tip b { font-weight: 600; }
+    .legend { display: flex; gap: 16px; flex-wrap: wrap; color: var(--faint); font-size: 13px; margin-top: 8px; }
+    .key { display: inline-block; width: 14px; height: 0; border-top: 2px solid var(--gold); vertical-align: middle; margin-right: 6px; }
+    .key.dash { border-top: 2px dashed var(--muted); }
+    .key.band { height: 8px; border: 0; background: rgba(226, 180, 76, .25); }
+
+    /* Bot status */
+    .bot-state { display: flex; gap: 12px; align-items: flex-start; }
+    .bot-dot { width: 12px; height: 12px; border-radius: 50%; margin-top: 6px; flex: none; background: var(--faint); }
+    .bot-title { font-size: 18px; font-weight: 700; line-height: 1.35; }
+    .bot-why { color: var(--muted); font-size: 14px; margin-top: 4px; }
+    .meter { margin-top: 16px; }
+    .meter-head { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+    .meter-head b { color: var(--text); font-weight: 600; }
+    .segs { display: grid; gap: 4px; }
+    .segs i { height: 6px; border-radius: 3px; background: var(--line); }
+    .segs i.on { background: var(--down); }
+    .bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+    .bar > i { display: block; height: 100%; border-radius: 3px; background: var(--up); }
+    .facts { margin-top: 16px; display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font-size: 13px; }
+    .facts dt { color: var(--muted); }
+    .facts dd { text-align: right; font-weight: 500; }
+
+    /* Positions */
+    .pos-card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+    .pos-card + .pos-card { margin-top: 10px; }
     .pos-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-    .side { font-weight: 700; font-size: 17px; }
+    .side { font-weight: 700; font-size: 16px; }
     .side.buy { color: var(--up); }
     .side.sell { color: var(--down); }
-    .pos-meta { color: var(--muted); font-size: 14px; }
     .pos-pnl { text-align: right; font-size: 20px; font-weight: 700; line-height: 1.2; }
     .pos-pnl small { display: block; font-size: 13px; font-weight: 500; color: var(--muted); }
-    .track { margin-top: 14px; }
+    .track { margin-top: 12px; }
     .track-bar { position: relative; height: 6px; border-radius: 3px; background: var(--line); }
     .track-fill { position: absolute; top: 0; bottom: 0; border-radius: 3px; }
     .track-mark { position: absolute; top: -5px; width: 2px; height: 16px; background: var(--text); border-radius: 1px; }
-    .track-legend { display: grid; grid-template-columns: 1fr auto 1fr; font-size: 13px; color: var(--muted); margin-top: 8px; gap: 8px; }
-    .track-legend span:nth-child(2) { text-align: center; }
+    .track-legend { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--muted); margin-top: 8px; }
     .track-legend b { color: var(--text); font-weight: 600; }
-    .pos-foot { margin-top: 10px; font-size: 13px; color: var(--faint); }
+    .pos-foot { margin-top: 8px; font-size: 13px; color: var(--faint); }
 
-    .empty { color: var(--muted); font-size: 14px; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    /* Tables (wide screens) */
+    .table-wrap { overflow: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { text-align: left; font-weight: 500; color: var(--muted); font-size: 13px; padding: 0 12px 8px 0; white-space: nowrap;
+         position: sticky; top: 0; background: var(--ink); }
+    td { padding: 9px 12px 9px 0; border-top: 1px solid var(--line); white-space: nowrap; }
+    th.r, td.r { text-align: right; }
+    td.track-cell { width: 26%; min-width: 160px; white-space: normal; }
+    td.track-cell .track { margin-top: 0; }
+    td.track-cell .track-legend { margin-top: 4px; }
+    tr.day td { color: var(--muted); font-size: 13px; padding-top: 14px; border-top: 0; }
 
-    /* Performance: a row of figures, not a grid of cards */
-    .perf { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-    .perf > div { padding: 12px 0; }
-    .perf > div + div { padding-left: 12px; border-left: 1px solid var(--line); }
-    .perf-note { color: var(--faint); font-size: 13px; margin-top: 8px; }
-    @media (max-width: 380px) {
-      .perf { grid-template-columns: repeat(2, 1fr); }
-      .perf > div:nth-child(3) { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); }
-      .perf > div:nth-child(4) { border-top: 1px solid var(--line); }
-      .hero-value { font-size: 34px; }
-    }
-
-    /* Market */
-    .market { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .sym { font-weight: 600; }
-    .sym-price { font-size: 17px; font-weight: 600; }
-
-    /* History rows */
+    /* Deal list (narrow screens) */
     .deals { list-style: none; border-top: 1px solid var(--line); }
-    .deal { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+    .deal { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
     .deal-main { font-weight: 600; }
     .deal-pnl { font-weight: 700; text-align: right; }
     .deal-meta { color: var(--faint); font-size: 13px; }
-    .deal-meta-r { color: var(--faint); font-size: 13px; text-align: right; }
+    .deal-meta.r { text-align: right; }
     .more { margin-top: 12px; width: 100%; background: transparent; color: var(--text); border: 1px solid var(--line); }
 
-    footer { margin-top: 32px; color: var(--faint); font-size: 13px; }
-    footer p + p { margin-top: 2px; }
+    /* Performance */
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+    .stats .value { font-size: 17px; }
+    .note { color: var(--faint); font-size: 13px; margin-top: 12px; }
+    .daily { margin-top: 18px; }
+    .daily .chart { height: 120px; }
 
+    /* Market */
+    .quote { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+    .quote-price { font-size: 26px; font-weight: 700; line-height: 1.2; }
+    .quote-row { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .quote-row b { color: var(--text); font-weight: 600; }
+    .spread .chart { height: 110px; margin-top: 12px; }
+    .other { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
+
+    /* ---------- Narrow: one column, bot status near the top ---------- */
+    @media (max-width: 1099px) {
+      .left, .right, .bottom { display: contents; }
+      .app { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); padding-bottom: env(safe-area-inset-bottom); }
+      .top { order: 0; } .kpi-p { order: 1; } .bot-p { order: 2; } .pos-p { order: 3; } .curve-p { order: 4; }
+      .perf-p { order: 5; } .mkt-p { order: 6; } .deals-p { order: 7; }
+      .panel { padding: 16px max(16px, env(safe-area-inset-left)); }
+      .wide-only { display: none !important; }
+    }
+    @media (max-width: 380px) {
+      .hero-value { font-size: 34px; }
+      .kpi { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* ---------- Wide: everything in one screen ---------- */
+    @media (min-width: 1100px) {
+      body { font-size: 14px; overflow: hidden; }
+      .narrow-only { display: none !important; }
+      .app { height: 100vh; height: 100dvh; min-height: 0;
+             grid-template-columns: minmax(0, 1fr) clamp(340px, 26vw, 420px);
+             grid-template-rows: auto minmax(0, 1fr); }
+      .top { grid-column: 1 / -1; padding: 10px 20px; }
+      .left { display: grid; gap: 1px; min-height: 0;
+              grid-template-rows: auto minmax(200px, .85fr) auto minmax(300px, 1fr); }
+      .right { display: grid; gap: 1px; min-height: 0; grid-template-rows: auto minmax(0, 1fr); }
+      .bottom { display: grid; gap: 1px; min-height: 0; grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr); }
+      .panel { padding: 16px 20px; }
+      .kpi { grid-template-columns: minmax(220px, 1.6fr) repeat(5, minmax(0, 1fr)); align-items: end; }
+      .kpi-hero { grid-column: auto; }
+      .hero-value { font-size: 42px; }
+      .curve-p { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+      .curve-p .chart { flex: 1 1 0; height: auto; min-height: 0; }
+      .curve-p .panel-head { margin-bottom: 4px; }
+      .pos-p { max-height: 32vh; overflow: auto; }
+      .deals-p { display: flex; flex-direction: column; min-height: 0; }
+      .deals-p .table-wrap { flex: 1; min-height: 0; }
+      .perf-p, .mkt-p { overflow: auto; }
+      .stats { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px 14px; }
+      .daily { margin-top: 14px; }
+      .daily .chart { height: 100px; }
+    }
+    @media (min-width: 1100px) and (max-height: 760px) {
+      .hero-value { font-size: 34px; }
+      .left { grid-template-rows: auto minmax(210px, 1fr) auto minmax(200px, .9fr); }
+      .pos-p { max-height: 22vh; }
+      .curve-p .legend { display: none; }
+      .panel { padding-top: 12px; padding-bottom: 12px; }
+      .daily .chart { height: 80px; }
+      .kpi .sub { display: none; }
+    }
     @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
   </style>
 </head>
 <body>
-<main>
-  <header>
-    <div class="status">
-      <div class="status-main">
-        <span id="pulse" class="pulse" aria-hidden="true"></span>
-        <span id="status-text" class="status-text">Đang kết nối…</span>
-        <span id="status-age" class="status-age"></span>
-      </div>
-      <span class="instrument">Nyao Scalper</span>
+<div class="app">
+  <header class="panel top">
+    <div class="status-main">
+      <span id="pulse" class="pulse" aria-hidden="true"></span>
+      <span id="status-text" class="status-text">Đang kết nối…</span>
+      <span id="status-age" class="status-age"></span>
+    </div>
+    <div class="brand">Nyao Scalper<span>XAUUSDc M5</span></div>
+    <div class="top-meta">
+      <span id="acct">--</span>
+      <span>Ping <b id="ping">--</b></span>
+      <span>Giờ VN <b id="clock">--:--:--</b></span>
     </div>
     <div id="alert" class="alert" role="alert">
       <span id="alert-text"></span>
@@ -156,89 +244,163 @@
     </div>
   </header>
 
-  <div class="hero" aria-labelledby="equity-label">
-    <div id="equity-label" class="hero-label">Tài sản (equity)</div>
-    <div class="hero-value"><span id="equity">--</span><small>USC</small></div>
-    <div id="equity-usd" class="hero-usd">≈ $--</div>
+  <div class="left">
+    <section class="panel kpi-p" aria-label="Tài khoản">
+      <div class="kpi">
+        <div class="kpi-hero">
+          <div class="label">Tài sản (equity)</div>
+          <div class="hero-value"><span id="equity">--</span><small>USC</small></div>
+          <div id="equity-usd" class="sub">≈ $-- USD</div>
+        </div>
+        <div><div class="label">Hôm nay</div><div id="today" class="value">--</div><div id="today-usd" class="sub"></div></div>
+        <div><div class="label">Thả nổi</div><div id="floating" class="value">--</div><div id="floating-usd" class="sub"></div></div>
+        <div><div class="label">Số dư</div><div id="balance" class="value">--</div><div id="balance-usd" class="sub"></div></div>
+        <div class="wide-only"><div class="label">Ký quỹ đang dùng</div><div id="margin" class="value">--</div><div id="free-margin" class="sub"></div></div>
+        <div class="wide-only"><div class="label">Cách đỉnh equity</div><div id="from-peak" class="value">--</div><div id="peak" class="sub"></div></div>
+      </div>
+    </section>
 
-    <div class="hero-row">
-      <div>
-        <div class="stat-label">Hôm nay</div>
-        <div id="today" class="stat-value">--</div>
-        <div id="today-usd" class="stat-sub"></div>
+    <section class="panel curve-p" aria-labelledby="curve-title">
+      <div class="panel-head">
+        <h2 id="curve-title">Đường equity</h2>
+        <div class="seg" role="group" aria-label="Khoảng thời gian">
+          <button type="button" data-hours="6" aria-pressed="false">6 giờ</button>
+          <button type="button" data-hours="24" aria-pressed="true">24 giờ</button>
+          <button type="button" data-hours="168" aria-pressed="false">7 ngày</button>
+          <button type="button" data-hours="720" aria-pressed="false">30 ngày</button>
+        </div>
       </div>
-      <div>
-        <div class="stat-label">Thả nổi</div>
-        <div id="floating" class="stat-value">--</div>
-        <div id="floating-usd" class="stat-sub"></div>
+      <div class="chart" id="curve-box">
+        <svg id="curve-svg" role="img" aria-labelledby="curve-desc"></svg>
+        <div id="curve-empty" class="chart-empty">Đang tải đường equity…</div>
+        <div id="curve-tip" class="tip"></div>
       </div>
-      <div>
-        <div class="stat-label">Số dư</div>
-        <div id="balance" class="stat-value">--</div>
-        <div id="balance-usd" class="stat-sub"></div>
+      <div class="legend">
+        <span><i class="key"></i>Equity</span>
+        <span><i class="key dash"></i>Số dư</span>
+        <span id="curve-desc">Ghi mỗi phút</span>
       </div>
-    </div>
+    </section>
 
-    <div class="curve" id="curve">
-      <svg id="curve-svg" viewBox="0 0 300 96" preserveAspectRatio="none" role="img" aria-labelledby="curve-desc"></svg>
-      <div id="curve-empty" class="curve-empty">Đang tải đường equity…</div>
-    </div>
-    <div class="curve-caption">
-      <span id="curve-desc">Equity theo phút</span>
-      <span id="curve-range"></span>
+    <section class="panel pos-p" aria-labelledby="pos-title">
+      <div class="panel-head">
+        <h2 id="pos-title">Lệnh đang mở</h2>
+        <span id="pos-count" class="count"></span>
+      </div>
+      <div id="positions"><p class="empty">Đang tải…</p></div>
+    </section>
+
+    <div class="bottom">
+      <section class="panel deals-p" aria-labelledby="hist-title">
+        <div class="panel-head">
+          <h2 id="hist-title">Lệnh đã đóng</h2>
+          <span id="deal-count" class="count"></span>
+        </div>
+        <div class="table-wrap wide-only"><table>
+          <thead><tr><th>Giờ đóng</th><th>Lệnh</th><th class="r">Lot</th><th class="r">Giá đóng</th><th class="r">Lãi/lỗ</th><th class="r">Phí</th><th class="r">Ròng (USC)</th></tr></thead>
+          <tbody id="deals-table"></tbody>
+        </table></div>
+        <div class="narrow-only">
+          <ul id="deals" class="deals"></ul>
+          <button type="button" id="more" class="more" hidden>Xem thêm</button>
+        </div>
+      </section>
+
+      <section class="panel perf-p" aria-labelledby="perf-title">
+        <div class="panel-head">
+          <h2 id="perf-title">Hiệu suất</h2>
+          <span id="perf-count" class="count"></span>
+        </div>
+        <div class="stats">
+          <div><div class="label">Tỷ lệ thắng</div><div id="winrate" class="value">--</div></div>
+          <div><div class="label">Profit factor</div><div id="pf" class="value">--</div></div>
+          <div><div class="label">Lãi ròng</div><div id="net" class="value">--</div></div>
+          <div><div class="label">Sụt vốn max</div><div id="dd" class="value">--</div></div>
+          <div><div class="label">TB lệnh thắng</div><div id="avgwin" class="value">--</div></div>
+          <div><div class="label">TB lệnh thua</div><div id="avgloss" class="value">--</div></div>
+          <div><div class="label">Kỳ vọng/lệnh</div><div id="expect" class="value">--</div></div>
+          <div><div class="label">Chuỗi hiện tại</div><div id="streak" class="value">--</div></div>
+        </div>
+        <div class="daily">
+          <div class="panel-head" style="margin-bottom:6px"><h2>Lãi/lỗ theo ngày</h2><span id="daily-sum" class="count"></span></div>
+          <div class="chart" id="daily-box">
+            <svg id="daily-svg" role="img" aria-labelledby="daily-sum"></svg>
+            <div id="daily-empty" class="chart-empty">Chưa có lệnh đóng.</div>
+            <div id="daily-tip" class="tip"></div>
+          </div>
+        </div>
+        <p id="perf-note" class="note"></p>
+      </section>
     </div>
   </div>
 
-  <section aria-labelledby="pos-title">
-    <div class="section-head">
-      <h2 id="pos-title">Lệnh đang mở</h2>
-      <span id="pos-count" class="count"></span>
-    </div>
-    <div id="positions"><p class="empty">Đang tải…</p></div>
-  </section>
+  <div class="right">
+    <section class="panel bot-p" aria-labelledby="bot-title">
+      <div class="panel-head"><h2 id="bot-title">Trạng thái bot</h2><span id="bot-saved" class="count"></span></div>
+      <div class="bot-state" aria-live="polite">
+        <span id="bot-dot" class="bot-dot" aria-hidden="true"></span>
+        <div>
+          <div id="bot-headline" class="bot-title">Đang đọc trạng thái…</div>
+          <p id="bot-why" class="bot-why"></p>
+        </div>
+      </div>
+      <div class="meter">
+        <div class="meter-head"><span>Thua liên tiếp</span><span><b id="streak-n">--</b> / <span id="streak-max"></span> thì tạm dừng</span></div>
+        <div id="streak-segs" class="segs"></div>
+      </div>
+      <div class="meter">
+        <div class="meter-head"><span>Lỗ trong ngày (ước tính)</span><span><b id="dl-used">--</b> / giới hạn <span id="dl-max"></span></span></div>
+        <div class="bar"><i id="dl-bar" style="width:0"></i></div>
+      </div>
+      <dl class="facts">
+        <dt>Rủi ro mỗi lệnh</dt><dd>1,25% vốn, SL cách $20</dd>
+        <dt>Chốt lời</dt><dd>Xét mỗi $20, SL bám từ +$10</dd>
+        <dt>Hoà vốn</dt><dd>Dời SL về giá vào ở +$15</dd>
+        <dt>USDJPYc</dt><dd class="faint">Tạm ngừng đến khi vốn ≈ 2.600 USC</dd>
+      </dl>
+    </section>
 
-  <section aria-labelledby="perf-title">
-    <div class="section-head">
-      <h2 id="perf-title">Hiệu suất</h2>
-      <span id="perf-count" class="count"></span>
-    </div>
-    <div class="perf">
-      <div><div class="stat-label">Tỷ lệ thắng</div><div id="winrate" class="stat-value">--</div></div>
-      <div><div class="stat-label">Profit factor</div><div id="pf" class="stat-value">--</div></div>
-      <div><div class="stat-label">Lãi ròng</div><div id="net" class="stat-value">--</div></div>
-      <div><div class="stat-label">Sụt vốn lớn nhất</div><div id="dd" class="stat-value">--</div></div>
-    </div>
-    <p id="perf-note" class="perf-note"></p>
-  </section>
-
-  <section aria-labelledby="mkt-title">
-    <div class="section-head"><h2 id="mkt-title">Thị trường</h2></div>
-    <div class="market" id="market"></div>
-  </section>
-
-  <section aria-labelledby="hist-title">
-    <div class="section-head">
-      <h2 id="hist-title">Lệnh đã đóng</h2>
-      <span id="deal-count" class="count"></span>
-    </div>
-    <ul id="deals" class="deals"></ul>
-    <button type="button" id="more" class="more" hidden>Xem thêm</button>
-  </section>
-
-  <footer>
-    <p id="acct">--</p>
-    <p>Giờ hiển thị: Việt Nam (GMT+7). Tự làm mới mỗi 5 giây.</p>
-  </footer>
-</main>
+    <section class="panel mkt-p" aria-labelledby="mkt-title">
+      <div class="panel-head"><h2 id="mkt-title">Thị trường</h2><span id="tick-time" class="count"></span></div>
+      <div class="quote">
+        <span class="gold" style="font-weight:600">XAUUSDc</span>
+        <span id="xau-price" class="quote-price">--</span>
+      </div>
+      <div class="quote-row"><span>Bid <b id="xau-bid">--</b></span><span>Ask <b id="xau-ask">--</b></span><span>Spread <b id="xau-spread">--</b></span></div>
+      <div class="spread">
+        <div class="chart" id="spread-box">
+          <svg id="spread-svg" role="img" aria-labelledby="spread-desc"></svg>
+          <div id="spread-empty" class="chart-empty">Đang tải spread…</div>
+          <div id="spread-tip" class="tip"></div>
+        </div>
+        <div class="legend"><span><i class="key"></i>Spread TB</span><span><i class="key band"></i>Cao nhất</span><span id="spread-desc"></span></div>
+      </div>
+      <div class="other">
+        <span>USDJPYc <span class="faint">(tạm ngừng)</span></span>
+        <span><b id="jpy-price">--</b> <span class="faint" id="jpy-spread"></span></span>
+      </div>
+    </section>
+  </div>
+</div>
 
 <script>
 (function () {
+  'use strict';
   const $ = id => document.getElementById(id);
   const base = location.pathname.endsWith('/') ? location.pathname : location.pathname + '/';
+  const WIDE = window.matchMedia('(min-width: 1100px)');
   const STALE_MS = 15000;
-  const SYMBOLS = ['XAUUSDc', 'USDJPYc'];
-  let lastOk = 0, failures = 0, dealsShown = 10, lastDeals = [];
+  // Mirrors settings/xauusd-default.set
+  const LOSS_STREAK_PAUSE = 4, DAILY_LOSS_PCT = 5;
+  const BOT_SYMBOL = 'XAUUSDc';
 
+  let lastOk = 0, failures = 0, connectedNow = null, dealsShown = 10;
+  let D = null;                 // last /api/data
+  let A = null;                 // last /api/analytics
+  let hours = 24;
+  try { const h = Number(localStorage.getItem('nyao.hours')); if ([6, 24, 168, 720].includes(h)) hours = h; } catch (e) {}
+
+  /* ---------- formatting ---------- */
   function esc(v) {
     return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;')
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -252,21 +414,36 @@
     if (!isFinite(n)) return '--';
     return (n > 0 ? '+' : n < 0 ? '−' : '') + fmt(Math.abs(n), d);
   }
-  function tone(el, v) {
-    el.classList.remove('up', 'down');
-    if (v > 0) el.classList.add('up'); else if (v < 0) el.classList.add('down');
-  }
+  function usd(v) { const n = Number(v); return isFinite(n) ? (n < 0 ? '−$' : '$') + fmt(Math.abs(n), 2) : ''; }
+  function toneCls(v) { return v > 0 ? 'up' : v < 0 ? 'down' : ''; }
+  function tone(el, v) { el.classList.remove('up', 'down'); const c = toneCls(v); if (c) el.classList.add(c); }
   // "2026-11-03 11:42:11" -> "03/11 11:42"
   function shortTime(s) {
     const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}:\d{2})/.exec(String(s || ''));
     return m ? m[3] + '/' + m[2] + ' ' + m[4] : String(s || '');
   }
-  function usd(v) { const n = Number(v); return isFinite(n) ? (n < 0 ? '−$' : '$') + fmt(Math.abs(n), 2) : ''; }
+  function hhmm(s) { const m = /(\d{2}:\d{2})/.exec(String(s || '')); return m ? m[1] : ''; }
+  function ddmm(day) { return day.slice(8, 10) + '/' + day.slice(5, 7); }
+  function dealNet(d) { return d.net_cent != null ? Number(d.net_cent) : Number(d.profit_cent); }
+  function svgEl(svg, box) {
+    const W = box.clientWidth, H = box.clientHeight;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    return [W, H];
+  }
+  function niceTicks(min, max, count) {
+    const span = max - min || 1, raw = span / count;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw))), norm = raw / mag;
+    const step = (norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10) * mag;
+    const out = [];
+    for (let v = Math.ceil(min / step) * step; v <= max + 1e-9; v += step) out.push(v);
+    return out;
+  }
 
-  // Status strip + freshness (ticks every second, independent of fetches)
-  function renderStatus(connected) {
-    const age = lastOk ? Math.round((Date.now() - lastOk) / 1000) : null;
+  /* ---------- status strip ---------- */
+  function renderStatus() {
     const pulse = $('pulse'), text = $('status-text');
+    const now = new Date();
+    $('clock').textContent = now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Ho_Chi_Minh', hour12: false });
     if (!lastOk) {
       const down = failures >= 2;
       pulse.className = down ? 'pulse dead' : 'pulse';
@@ -274,26 +451,24 @@
       $('status-age').textContent = '';
       return;
     }
+    const age = Math.round((Date.now() - lastOk) / 1000);
     $('status-age').textContent = age < 2 ? 'vừa cập nhật' : 'cập nhật ' + age + ' giây trước';
-    if (Date.now() - lastOk > STALE_MS) {
-      pulse.className = 'pulse stale'; text.textContent = 'Dữ liệu cũ';
-    } else if (connected === false) {
-      pulse.className = 'pulse dead'; text.textContent = 'MT5 mất kết nối';
-    } else {
-      pulse.className = 'pulse live'; text.textContent = 'Đang chạy';
-    }
+    if (Date.now() - lastOk > STALE_MS) { pulse.className = 'pulse stale'; text.textContent = 'Dữ liệu cũ'; }
+    else if (connectedNow === false) { pulse.className = 'pulse dead'; text.textContent = 'MT5 mất kết nối'; }
+    else { pulse.className = 'pulse live'; text.textContent = 'MT5 đang kết nối'; }
   }
-  let connectedNow = null;
-  setInterval(() => renderStatus(connectedNow), 1000);
-
-  function showAlert(msg, warn) {
-    const a = $('alert');
-    a.className = 'alert show' + (warn ? ' warn' : '');
-    $('alert-text').textContent = msg;
-  }
+  setInterval(renderStatus, 1000);
+  function showAlert(msg, warn) { $('alert').className = 'alert show' + (warn ? ' warn' : ''); $('alert-text').textContent = msg; }
   function hideAlert() { $('alert').className = 'alert'; }
 
-  function renderAccount(acc, analytics) {
+  function botState() {
+    const list = (D && D.bot) || [];
+    return list.find(b => b.symbol === BOT_SYMBOL && b.ok) || list.find(b => b.ok) || null;
+  }
+
+  /* ---------- account ---------- */
+  function renderAccount() {
+    const acc = D && D.account;
     if (!acc || acc.equity === undefined) return;
     $('equity').textContent = fmt(acc.equity, 2);
     $('equity-usd').textContent = '≈ ' + usd(acc.equity_usd) + ' USD';
@@ -304,172 +479,425 @@
     $('floating-usd').textContent = usd(acc.floating_usd);
     $('balance').textContent = fmt(acc.balance, 1);
     $('balance-usd').textContent = usd(acc.balance_usd);
-    if (acc.login !== undefined) $('acct').textContent = 'Tài khoản #' + acc.login + ', ' + (acc.server || '');
+    $('margin').textContent = fmt(acc.margin, 1);
+    $('free-margin').textContent = 'Còn trống ' + fmt(acc.free_margin, 0) + (acc.margin > 0 ? ', mức ' + fmt(acc.margin_level, 0) + '%' : '');
+    const b = botState();
+    if (b && b.peak_equity > 0) {
+      const gap = (acc.equity - b.peak_equity) / b.peak_equity * 100;
+      $('from-peak').textContent = gap >= 0 ? 'Đang ở đỉnh' : signed(gap, 2) + '%';
+      tone($('from-peak'), gap >= 0 ? 0 : gap);
+      $('peak').textContent = 'Đỉnh ' + fmt(b.peak_equity, 1) + ' USC';
+    }
+    $('acct').textContent = '#' + acc.login + ', ' + (acc.server || '');
+    $('ping').textContent = acc.ping ? fmt(acc.ping, 0) + ' ms' : '--';
   }
 
-  // Price units: profit per 1.0 price move, read from the position itself (works for any symbol / lot)
-  function renderPositions(list) {
+  /* ---------- bot status ---------- */
+  function dailyLossUsedPct() {
+    const acc = D && D.account;
+    if (!acc) return null;
+    const closed = Number(acc.today_profit) || 0, fl = Number(acc.floating) || 0;
+    const dayStart = Number(acc.balance) - closed;
+    if (!(dayStart > 0)) return null;
+    return Math.max(0, -(closed + fl)) / dayStart * 100;
+  }
+  function renderBot() {
+    const b = botState(), dot = $('bot-dot'), head = $('bot-headline'), why = $('bot-why');
+    const positions = (D && D.positions || []).filter(p => p.symbol === BOT_SYMBOL);
+    const used = dailyLossUsedPct();
+    let color = 'var(--faint)', title, text = '';
+    if (!b) {
+      title = 'Không đọc được trạng thái bot';
+      text = 'Dịch vụ chưa thấy file trạng thái của EA. Bot vẫn có thể đang chạy; kiểm tra trên chart MT5.';
+    } else if (b.equity_pause_until_vn || b.basket_pause_until_vn) {
+      color = 'var(--warn)'; title = 'Tạm nghỉ do sụt vốn';
+      text = 'Bot không vào lệnh mới đến ' + shortTime(b.equity_pause_until_vn || b.basket_pause_until_vn) + '.';
+    } else if (used !== null && used >= DAILY_LOSS_PCT) {
+      color = 'var(--warn)'; title = 'Đã chạm giới hạn lỗ trong ngày';
+      text = 'Không vào lệnh mới cho đến ngày giao dịch tiếp theo (07:00 giờ VN).';
+    } else if (b.streak_paused) {
+      color = 'var(--warn)'; title = 'Tạm dừng vào lệnh thật';
+      text = 'Thua ' + b.loss_streak + ' lệnh liên tiếp. Bot đang vào lệnh trên giấy và sẽ đánh lại khi một lệnh giấy thắng. ';
+      text += b.paper
+        ? 'Lệnh giấy: ' + (b.paper.side === 'BUY' ? 'Mua' : 'Bán') + ' tại ' + fmt(b.paper.entry, 2) + ', thắng ở ' + fmt(b.paper.target, 2) + ', thua ở ' + fmt(b.paper.stop, 2) + '.'
+        : 'Chưa có lệnh giấy: đang chờ tín hiệu đạt chuẩn.';
+    } else if (b.cooldown_until_vn) {
+      color = 'var(--warn)'; title = 'Đang nghỉ giữa các lệnh';
+      text = 'Vào lệnh lại sau ' + shortTime(b.cooldown_until_vn) + '.';
+    } else if (positions.length) {
+      color = 'var(--up)'; title = 'Đang quản lý ' + positions.length + ' lệnh';
+      text = 'SL bám theo giá và dời về hoà vốn khi đủ lời.';
+    } else {
+      color = 'var(--up)'; title = 'Đang chờ tín hiệu';
+      text = 'Bot chỉ vào lệnh theo xu hướng ngày (D1) khi điểm tín hiệu đạt chuẩn.';
+    }
+    dot.style.background = color;
+    head.textContent = title;
+    why.textContent = text;
+    $('bot-saved').textContent = b && b.saved_at_vn ? 'đổi lần cuối ' + shortTime(b.saved_at_vn) : '';
+
+    const n = b ? Math.min(b.loss_streak, LOSS_STREAK_PAUSE) : 0;
+    $('streak-n').textContent = b ? b.loss_streak : '--';
+    $('streak-max').textContent = LOSS_STREAK_PAUSE;
+    const segs = $('streak-segs');
+    segs.style.gridTemplateColumns = 'repeat(' + LOSS_STREAK_PAUSE + ', 1fr)';
+    segs.innerHTML = Array.from({ length: LOSS_STREAK_PAUSE }, (_, i) => '<i class="' + (i < n ? 'on' : '') + '"></i>').join('');
+
+    $('dl-max').textContent = DAILY_LOSS_PCT + '%';
+    $('dl-used').textContent = used === null ? '--' : fmt(used, 2) + '%';
+    const frac = used === null ? 0 : Math.min(1, used / DAILY_LOSS_PCT);
+    const bar = $('dl-bar');
+    bar.style.width = (frac * 100) + '%';
+    bar.style.background = frac >= 1 ? 'var(--down)' : frac >= .6 ? 'var(--warn)' : 'var(--up)';
+  }
+
+  /* ---------- positions ---------- */
+  function trackInfo(p) {
+    const buy = p.type === 'BUY';
+    const open = Number(p.price_open), cur = Number(p.price_current), sl = Number(p.sl), pnl = Number(p.profit_cent);
+    const move = buy ? cur - open : open - cur;               // + = in our favour
+    if (!(sl > 0)) return null;
+    const risk = Math.abs(open - sl);
+    const toStop = buy ? cur - sl : sl - cur;
+    const perUnit = Math.abs(move) > risk * 0.02 ? Math.abs(pnl / move) : null;
+    const atStop = perUnit ? -perUnit * (buy ? open - sl : sl - open) : null; // P/L if the stop is hit
+    const pos = Math.max(0, Math.min(100, 50 + (move / (risk || 1)) * 50));   // 0 = stop, 50 = entry
+    const fill = move >= 0 ? 'left:50%;width:' + (pos - 50) + '%;background:var(--up)'
+                           : 'left:' + pos + '%;width:' + (50 - pos) + '%;background:var(--down)';
+    const locked = buy ? sl >= open : sl <= open;
+    return { open, sl, toStop, atStop, pos, fill, locked };
+  }
+  function trackHtml(t) {
+    return '<div class="track" aria-label="Còn cách SL ' + fmt(t.toStop, 2) + '">' +
+      '<div class="track-bar"><div class="track-fill" style="' + t.fill + '"></div>' +
+      '<div class="track-mark" style="left:calc(' + t.pos + '% - 1px)"></div></div>' +
+      '<div class="track-legend"><span>' + (t.locked ? 'SL có lãi' : 'SL') + ' <b>' + fmt(t.sl, 2) + '</b></span>' +
+      '<span>Vào <b>' + fmt(t.open, 2) + '</b></span></div></div>';
+  }
+  function atStopText(t) {
+    if (!t) return 'Lệnh không có SL';
+    if (t.atStop === null) return 'Còn cách SL ' + fmt(t.toStop, 2);
+    return 'Chạm SL: ' + (t.atStop >= 0 ? 'lãi ' : 'lỗ ') + fmt(Math.abs(t.atStop), 1) + ' USC';
+  }
+  function renderPositions() {
+    const list = (D && D.positions) || [];
     $('pos-count').textContent = list.length ? list.length + ' lệnh' : '';
-    if (!list.length) { $('positions').innerHTML = '<p class="empty">Không có lệnh nào đang mở. Bot đang chờ tín hiệu.</p>'; return; }
-    $('positions').innerHTML = list.map(p => {
-      const buy = p.type === 'BUY';
-      const open = Number(p.price_open), cur = Number(p.price_current), sl = Number(p.sl);
-      const pnl = Number(p.profit_cent);
-      const move = buy ? cur - open : open - cur;               // + = in our favour
-      let track = '';
-      if (sl > 0) {
-        const risk = Math.abs(open - sl);                       // price distance entry -> stop
-        const toStop = buy ? cur - sl : sl - cur;               // distance left before the stop
-        const perUnit = Math.abs(move) > risk * 0.02 ? Math.abs(pnl / move) : null;
-        const maxLoss = perUnit ? perUnit * (buy ? open - sl : sl - open) : null; // >0 = loss at SL
-        // Bar: 0% = stop, 50% = entry, 100% = one stop-distance in profit
-        const pos = Math.max(0, Math.min(100, 50 + (move / (risk || 1)) * 50));
-        const fill = move >= 0
-          ? `left:50%;width:${pos - 50}%;background:var(--up)`
-          : `left:${pos}%;width:${50 - pos}%;background:var(--down)`;
-        const slLabel = (buy ? sl >= open : sl <= open) ? 'SL có lãi' : 'SL';
-        track = `
-          <div class="track" aria-label="Khoảng cách tới SL: ${fmt(toStop, 2)}">
-            <div class="track-bar"><div class="track-fill" style="${fill}"></div>
-              <div class="track-mark" style="left:calc(${pos}% - 1px)"></div></div>
-            <div class="track-legend">
-              <span>${slLabel} <b>${fmt(sl, 3)}</b></span>
-              <span>Vào <b>${fmt(open, 3)}</b></span>
-              <span></span>
-            </div>
-          </div>
-          <p class="pos-foot">Còn cách SL ${fmt(toStop, 2)}${maxLoss !== null
-            ? (maxLoss > 0 ? `, nếu chạm SL lỗ khoảng ${fmt(maxLoss, 1)} USC` : `, nếu chạm SL vẫn lãi khoảng ${fmt(-maxLoss, 1)} USC`) : ''}.</p>`;
-      } else {
-        track = `<p class="pos-foot" style="color:var(--warn)">Lệnh không có SL.</p>`;
-      }
-      return `
-        <article class="position">
-          <div class="pos-top">
-            <div>
-              <div class="side ${buy ? 'buy' : 'sell'}">${buy ? 'Mua' : 'Bán'} ${esc(p.symbol)}</div>
-              <div class="pos-meta">${fmt(p.volume, 2)} lot, mở lúc ${esc(String(p.time_vn || p.time || '').slice(0, 5))}</div>
-            </div>
-            <div class="pos-pnl ${pnl > 0 ? 'up' : pnl < 0 ? 'down' : ''}">${signed(pnl, 2)}<small>USC</small></div>
-          </div>${track}
-        </article>`;
-    }).join('');
+    const box = $('positions');
+    if (!list.length) { box.innerHTML = '<p class="empty">Không có lệnh nào đang mở.</p>'; return; }
+    if (WIDE.matches) {
+      box.innerHTML = '<div class="table-wrap"><table><thead><tr><th>Lệnh</th><th class="r">Lot</th><th class="r">Giá vào</th><th class="r">Hiện tại</th>' +
+        '<th class="r">TP</th><th>Khoảng cách tới SL</th><th class="r">Nếu chạm SL</th><th class="r">Lãi/lỗ (USC)</th></tr></thead><tbody>' +
+        list.map(p => {
+          const buy = p.type === 'BUY', t = trackInfo(p), pnl = Number(p.profit_cent);
+          return '<tr><td><span class="side ' + (buy ? 'buy' : 'sell') + '">' + (buy ? 'Mua' : 'Bán') + '</span> ' + esc(p.symbol) +
+            ' <span class="faint">#' + esc(p.ticket) + ', ' + esc(hhmm(p.time_vn || p.time)) + '</span></td>' +
+            '<td class="r">' + fmt(p.volume, 2) + '</td><td class="r">' + fmt(p.price_open, 2) + '</td><td class="r">' + fmt(p.price_current, 2) + '</td>' +
+            '<td class="r">' + (Number(p.tp) > 0 ? fmt(p.tp, 2) : '<span class="faint">không</span>') + '</td>' +
+            '<td class="track-cell">' + (t ? trackHtml(t) : '<span class="warn-t">Không có SL</span>') + '</td>' +
+            '<td class="r ' + (t && t.atStop !== null ? toneCls(t.atStop) : '') + '">' + (t && t.atStop !== null ? signed(t.atStop, 1) : '--') + '</td>' +
+            '<td class="r ' + toneCls(pnl) + '" style="font-weight:700;font-size:16px">' + signed(pnl, 2) + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+    } else {
+      box.innerHTML = list.map(p => {
+        const buy = p.type === 'BUY', t = trackInfo(p), pnl = Number(p.profit_cent);
+        return '<article class="pos-card"><div class="pos-top"><div>' +
+          '<div class="side ' + (buy ? 'buy' : 'sell') + '">' + (buy ? 'Mua' : 'Bán') + ' ' + esc(p.symbol) + '</div>' +
+          '<div class="sub">' + fmt(p.volume, 2) + ' lot, mở lúc ' + esc(hhmm(p.time_vn || p.time)) + '</div></div>' +
+          '<div class="pos-pnl ' + toneCls(pnl) + '">' + signed(pnl, 2) + '<small>USC</small></div></div>' +
+          (t ? trackHtml(t) : '') +
+          '<p class="pos-foot"' + (t ? '' : ' style="color:var(--warn)"') + '>' + atStopText(t) + '.</p></article>';
+      }).join('');
+    }
   }
 
-  function renderPerf(s) {
+  /* ---------- closed deals ---------- */
+  function renderDeals() {
+    const deals = (D && D.recent_deals) || [];
+    $('deal-count').textContent = deals.length ? deals.length + ' lệnh gần nhất' : '';
+    if (!deals.length) {
+      $('deals-table').innerHTML = '<tr><td colspan="7" class="empty">Chưa có lệnh nào được đóng.</td></tr>';
+      $('deals').innerHTML = '<li class="empty">Chưa có lệnh nào được đóng.</li>';
+      $('more').hidden = true;
+      return;
+    }
+    // Exit deals carry the opposite side of the position they close
+    const side = d => ((d.trade_type || d.type) === 'BUY' ? 'Bán' : 'Mua');
+    if (WIDE.matches) {
+      let lastDay = '', rows = '';
+      deals.forEach(d => {
+        const day = String(d.deal_time_vn || '').slice(0, 10);
+        if (day !== lastDay) {
+          const sum = deals.filter(x => String(x.deal_time_vn || '').startsWith(day)).reduce((s, x) => s + dealNet(x), 0);
+          rows += '<tr class="day"><td colspan="6">' + esc(ddmm(day)) + '</td><td class="r ' + toneCls(sum) + '">' + signed(sum, 1) + '</td></tr>';
+          lastDay = day;
+        }
+        const net = dealNet(d), fee = (Number(d.commission) || 0) + (Number(d.swap) || 0) + (Number(d.fee) || 0);
+        rows += '<tr><td>' + esc(hhmm(d.deal_time_vn)) + '</td>' +
+          '<td>' + side(d) + ' ' + esc(d.symbol) + '</td>' +
+          '<td class="r">' + fmt(d.volume, 2) + '</td><td class="r">' + fmt(d.price, 2) + '</td>' +
+          '<td class="r">' + signed(d.profit_cent, 2) + '</td><td class="r faint">' + (fee ? signed(fee, 2) : '0') + '</td>' +
+          '<td class="r ' + toneCls(net) + '" style="font-weight:600">' + signed(net, 2) + '</td></tr>';
+      });
+      $('deals-table').innerHTML = rows;
+    } else {
+      $('deals').innerHTML = deals.slice(0, dealsShown).map(d => {
+        const net = dealNet(d);
+        return '<li class="deal"><span class="deal-main">' + side(d) + ' ' + esc(d.symbol) + '</span>' +
+          '<span class="deal-pnl ' + toneCls(net) + '">' + signed(net, 2) + ' USC</span>' +
+          '<span class="deal-meta">' + fmt(d.volume, 2) + ' lot, đóng tại ' + fmt(d.price, 2) + '</span>' +
+          '<span class="deal-meta r">' + esc(shortTime(d.deal_time_vn)) + '</span></li>';
+      }).join('');
+      $('more').hidden = deals.length <= dealsShown;
+    }
+  }
+  $('more').addEventListener('click', () => { dealsShown += 20; renderDeals(); });
+
+  /* ---------- performance ---------- */
+  function renderPerf() {
+    const s = D && D.analytics_summary;
     if (!s || s.total_trades === undefined) return;
-    $('perf-count').textContent = s.total_trades + ' lệnh, ' + s.win_trades + ' thắng, ' + s.loss_trades + ' thua';
-    $('winrate').textContent = s.total_trades ? fmt(s.win_rate_pct, 0) + '%' : '--';
-    $('pf').textContent = !s.total_trades ? '--' : s.profit_factor >= 99 ? '∞' : fmt(s.profit_factor, 2);
-    tone($('pf'), s.total_trades ? s.profit_factor - 1 : 0);
-    $('net').textContent = signed(s.net_profit_usc, 1); tone($('net'), s.net_profit_usc);
-    const eqdd = s.max_drawdown_equity_pct;
-    $('dd').textContent = (eqdd !== undefined && s.max_drawdown_equity_usc > 0)
-      ? fmt(eqdd, 1) + '%' : fmt(s.max_drawdown_usc, 1);
     const n = s.total_trades || 0;
+    $('perf-count').textContent = n + ' lệnh, ' + s.win_trades + ' thắng, ' + s.loss_trades + ' thua';
+    $('winrate').textContent = n ? fmt(s.win_rate_pct, 0) + '%' : '--';
+    $('pf').textContent = !n ? '--' : s.profit_factor >= 99 ? '∞' : fmt(s.profit_factor, 2);
+    tone($('pf'), n ? s.profit_factor - 1 : 0);
+    $('net').textContent = signed(s.net_profit_usc, 1); tone($('net'), s.net_profit_usc);
+    $('dd').textContent = s.max_drawdown_equity_usc > 0 ? fmt(s.max_drawdown_equity_pct, 1) + '%' : fmt(s.max_drawdown_usc, 1);
+    $('avgwin').textContent = s.win_trades ? '+' + fmt(s.avg_win_usc, 1) : '--';
+    $('avgloss').textContent = s.loss_trades ? '−' + fmt(s.avg_loss_usc, 1) : '--';
+    const exp = n ? s.net_profit_usc / n : NaN;
+    $('expect').textContent = n ? signed(exp, 1) : '--'; tone($('expect'), exp);
+    const deals = (D && D.recent_deals) || [];
+    let k = 0, sign = 0;
+    for (const d of deals) { const v = Math.sign(dealNet(d)); if (!v) continue; if (!sign) sign = v; if (v !== sign) break; k++; }
+    $('streak').textContent = k ? k + (sign > 0 ? ' thắng' : ' thua') : '--';
+    tone($('streak'), sign);
     $('perf-note').textContent = n < 100
       ? 'Mới có ' + n + ' lệnh. Cần khoảng 100 lệnh để đánh giá chiến lược. Đơn vị: USC.'
       : 'Đơn vị: USC. Lãi ròng đã gồm commission, swap và phí.';
   }
 
-  function renderMarket(ticks) {
-    $('market').innerHTML = SYMBOLS.map(sym => {
-      const t = ticks[sym];
-      if (!t) return `<div><div class="sym">${sym}</div><div class="muted">--</div></div>`;
-      const digits = /JPY/i.test(sym) ? 3 : 2;
-      return `<div>
-        <div class="sym" ${/XAU/i.test(sym) ? 'style="color:var(--gold)"' : ''}>${esc(sym)}</div>
-        <div class="sym-price">${fmt(t.bid, digits)}</div>
-        <div class="stat-sub">Spread ${t.spread_points == null ? '--' : fmt(t.spread_points, 0)} points</div>
-      </div>`;
-    }).join('');
-  }
-
-  // Exit deals carry the opposite side of the position they close
-  function renderDeals() {
-    const deals = lastDeals;
-    $('deal-count').textContent = deals.length ? deals.length + ' lệnh gần nhất' : '';
-    if (!deals.length) { $('deals').innerHTML = '<li class="empty">Chưa có lệnh nào được đóng.</li>'; $('more').hidden = true; return; }
-    $('deals').innerHTML = deals.slice(0, dealsShown).map(d => {
-      const pnl = d.net_cent != null ? Number(d.net_cent) : Number(d.profit_cent);
-      const dealSide = d.trade_type || d.type;
-      const posSide = dealSide === 'BUY' ? 'Bán' : 'Mua';
-      return `<li class="deal">
-        <span class="deal-main">${posSide} ${esc(d.symbol)}</span>
-        <span class="deal-pnl ${pnl > 0 ? 'up' : pnl < 0 ? 'down' : ''}">${signed(pnl, 2)} USC</span>
-        <span class="deal-meta">${fmt(d.volume, 2)} lot, đóng tại ${fmt(d.price, 3)}</span>
-        <span class="deal-meta-r">${esc(shortTime(d.deal_time_vn || d.time))}</span>
-      </li>`;
-    }).join('');
-    $('more').hidden = deals.length <= dealsShown;
-  }
-  $('more').addEventListener('click', () => { dealsShown += 20; renderDeals(); });
-
-  function renderCurve(points) {
-    const svg = $('curve-svg'), empty = $('curve-empty');
-    const eq = (points || []).map(p => Number(p.equity)).filter(isFinite);
-    if (eq.length < 2) { svg.innerHTML = ''; empty.textContent = 'Chưa đủ dữ liệu equity (ghi mỗi phút).'; empty.style.display = 'flex'; return; }
+  /* ---------- charts ---------- */
+  let curveGeo = null;
+  function renderCurve() {
+    const svg = $('curve-svg'), box = $('curve-box'), empty = $('curve-empty');
+    const pts = ((A && A.equity_curve) || []).filter(p => isFinite(Number(p.equity)));
+    if (pts.length < 2) {
+      svg.innerHTML = ''; curveGeo = null;
+      empty.textContent = A ? 'Chưa đủ dữ liệu equity trong khoảng này (ghi mỗi phút).' : 'Đang tải đường equity…';
+      empty.style.display = 'flex';
+      return;
+    }
     empty.style.display = 'none';
-    const min = Math.min(...eq), max = Math.max(...eq), span = (max - min) || 1;
-    const W = 300, H = 96, pad = 6;
-    const xy = eq.map((v, i) => [i / (eq.length - 1) * W, pad + (1 - (v - min) / span) * (H - pad * 2)]);
-    const line = xy.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
-    const area = line + ` L${W} ${H} L0 ${H} Z`;
-    const last = xy[xy.length - 1];
-    svg.innerHTML = `
-      <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#e2b44c" stop-opacity=".28"/><stop offset="1" stop-color="#e2b44c" stop-opacity="0"/></linearGradient></defs>
-      <path d="${area}" fill="url(#g)"/>
-      <path d="${line}" fill="none" stroke="#e2b44c" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>
-      <circle cx="${last[0]}" cy="${last[1]}" r="3.5" fill="#e2b44c"/>`;
-    const first = points[0].time || '', lastT = points[points.length - 1].time || '';
-    $('curve-desc').textContent = 'Equity ' + eq.length + ' phút gần nhất: thấp nhất ' + fmt(min, 1) + ', cao nhất ' + fmt(max, 1) + ' USC';
-    $('curve-range').textContent = first.slice(11, 16) + ' – ' + lastT.slice(11, 16);
+    const [W, H] = svgEl(svg, box);
+    const eq = pts.map(p => Number(p.equity)), bal = pts.map(p => Number(p.balance));
+    let min = Math.min(...eq, ...bal), max = Math.max(...eq, ...bal);
+    const padV = (max - min) * 0.08 || 5; min -= padV; max += padV;
+    const L = 4, R = 58, T = 8, B = 24, pw = W - L - R, ph = H - T - B;
+    const x = i => L + i / (pts.length - 1) * pw, y = v => T + (1 - (v - min) / (max - min)) * ph;
+    const path = arr => arr.map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1)).join(' ');
+    let g = '';
+    niceTicks(min, max, Math.max(2, Math.min(6, Math.floor(ph / 36)))).forEach(v => {
+      g += '<line x1="' + L + '" x2="' + (L + pw) + '" y1="' + y(v).toFixed(1) + '" y2="' + y(v).toFixed(1) + '" stroke="#1d2940"/>' +
+           '<text x="' + (W - 4) + '" y="' + (y(v) + 4).toFixed(1) + '" text-anchor="end" fill="#7d8ba1" font-size="12">' + fmt(v, 0) + '</text>';
+    });
+    const nx = Math.max(2, Math.min(7, Math.floor(pw / 110)));
+    for (let k = 0; k < nx; k++) {
+      const i = Math.round(k / (nx - 1) * (pts.length - 1));
+      const t = hours > 24 ? shortTime(pts[i].time) : hhmm(pts[i].time);
+      g += '<text x="' + x(i).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="' + (k === 0 ? 'start' : k === nx - 1 ? 'end' : 'middle') + '" fill="#7d8ba1" font-size="12">' + esc(t) + '</text>';
+    }
+    const line = path(eq);
+    const last = eq.length - 1;
+    svg.innerHTML = '<defs><linearGradient id="eqg" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="#e2b44c" stop-opacity=".22"/><stop offset="1" stop-color="#e2b44c" stop-opacity="0"/></linearGradient></defs>' + g +
+      '<path d="' + line + ' L' + x(last).toFixed(1) + ' ' + (T + ph) + ' L' + L + ' ' + (T + ph) + ' Z" fill="url(#eqg)"/>' +
+      '<path d="' + path(bal) + '" fill="none" stroke="#9aa8bd" stroke-width="1.5" stroke-dasharray="4 4"/>' +
+      '<path d="' + line + '" fill="none" stroke="#e2b44c" stroke-width="2" stroke-linejoin="round"/>' +
+      '<circle cx="' + x(last).toFixed(1) + '" cy="' + y(eq[last]).toFixed(1) + '" r="3.5" fill="#e2b44c"/>' +
+      '<g id="curve-cross" style="display:none"><line id="cx-line" y1="' + T + '" y2="' + (T + ph) + '" stroke="#9aa8bd" stroke-width="1"/>' +
+      '<circle id="cx-dot" r="4" fill="#e2b44c" stroke="#070b14" stroke-width="2"/></g>';
+    curveGeo = { pts, eq, bal, x, y, L, pw };
+    const lo = Math.min(...eq), hi = Math.max(...eq), chg = eq[last] - eq[0];
+    $('curve-desc').textContent = 'Thấp ' + fmt(lo, 1) + ', cao ' + fmt(hi, 1) + ', thay đổi ' + signed(chg, 1) + ' USC';
+  }
+  $('curve-box').addEventListener('pointermove', e => {
+    if (!curveGeo) return;
+    const r = e.currentTarget.getBoundingClientRect(), px = e.clientX - r.left;
+    const g = curveGeo, i = Math.max(0, Math.min(g.pts.length - 1, Math.round((px - g.L) / g.pw * (g.pts.length - 1))));
+    const cx = g.x(i), cy = g.y(g.eq[i]);
+    $('curve-cross').style.display = '';
+    $('cx-line').setAttribute('x1', cx); $('cx-line').setAttribute('x2', cx);
+    $('cx-dot').setAttribute('cx', cx); $('cx-dot').setAttribute('cy', cy);
+    const tip = $('curve-tip');
+    tip.innerHTML = esc(shortTime(g.pts[i].time)) + '<br>Equity <b>' + fmt(g.eq[i], 2) + '</b><br>Số dư <b>' + fmt(g.bal[i], 2) + '</b>';
+    tip.style.display = 'block';
+    const tw = tip.offsetWidth;
+    tip.style.left = Math.max(0, Math.min(r.width - tw, cx + 12 > r.width - tw ? cx - tw - 12 : cx + 12)) + 'px';
+    tip.style.top = Math.max(0, cy - 30) + 'px';
+  });
+  $('curve-box').addEventListener('pointerleave', () => {
+    $('curve-tip').style.display = 'none';
+    const c = $('curve-cross'); if (c) c.style.display = 'none';
+  });
+
+  let dailyGeo = null;
+  function renderDaily() {
+    const svg = $('daily-svg'), box = $('daily-box'), empty = $('daily-empty');
+    const deals = (A && A.recent_deals) || (D && D.recent_deals) || [];
+    const byDay = {};
+    deals.forEach(d => { const k = String(d.deal_time_vn || '').slice(0, 10); if (k) byDay[k] = (byDay[k] || 0) + dealNet(d); });
+    const days = Object.keys(byDay).sort().slice(-14);
+    if (!days.length) { svg.innerHTML = ''; dailyGeo = null; empty.style.display = 'flex'; $('daily-sum').textContent = ''; return; }
+    empty.style.display = 'none';
+    const [W, H] = svgEl(svg, box);
+    const vals = days.map(k => byDay[k]);
+    const amp = Math.max(1, ...vals.map(Math.abs));
+    const T = 6, B = 20, ph = H - T - B, mid = T + ph / 2;
+    const slot = W / days.length, bw = Math.max(6, Math.min(36, slot * 0.6));
+    let g = '<line x1="0" x2="' + W + '" y1="' + mid + '" y2="' + mid + '" stroke="#1d2940"/>';
+    const every = Math.ceil(days.length / Math.max(1, Math.floor(W / 48)));
+    days.forEach((k, i) => {
+      const v = vals[i], h = Math.abs(v) / amp * (ph / 2 - 2), cx = slot * i + slot / 2;
+      g += '<rect x="' + (cx - bw / 2).toFixed(1) + '" y="' + (v >= 0 ? mid - h : mid).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(1, h).toFixed(1) +
+           '" rx="2" fill="' + (v >= 0 ? '#34d399' : '#f87171') + '"/>';
+      if (i % every === 0 || i === days.length - 1)
+        g += '<text x="' + cx.toFixed(1) + '" y="' + (H - 4) + '" text-anchor="middle" fill="#7d8ba1" font-size="12">' + esc(ddmm(k)) + '</text>';
+    });
+    svg.innerHTML = g;
+    dailyGeo = { days, vals, slot };
+    const total = vals.reduce((s, v) => s + v, 0);
+    $('daily-sum').textContent = days.length + ' ngày, ' + signed(total, 1) + ' USC';
+  }
+  $('daily-box').addEventListener('pointermove', e => {
+    if (!dailyGeo) return;
+    const r = e.currentTarget.getBoundingClientRect(), px = e.clientX - r.left;
+    const i = Math.max(0, Math.min(dailyGeo.days.length - 1, Math.floor(px / dailyGeo.slot)));
+    const tip = $('daily-tip'), v = dailyGeo.vals[i];
+    tip.innerHTML = esc(ddmm(dailyGeo.days[i])) + ' <b class="' + toneCls(v) + '">' + signed(v, 1) + ' USC</b>';
+    tip.style.display = 'block';
+    tip.style.left = Math.max(0, Math.min(r.width - tip.offsetWidth, px - tip.offsetWidth / 2)) + 'px';
+    tip.style.top = '0px';
+  });
+  $('daily-box').addEventListener('pointerleave', () => { $('daily-tip').style.display = 'none'; });
+
+  let spreadGeo = null;
+  function renderSpread() {
+    const svg = $('spread-svg'), box = $('spread-box'), empty = $('spread-empty');
+    const s = ((A && A.spread) || {})[BOT_SYMBOL] || [];
+    if (s.length < 2) { svg.innerHTML = ''; spreadGeo = null; empty.textContent = A ? 'Chưa có dữ liệu spread.' : 'Đang tải spread…'; empty.style.display = 'flex'; $('spread-desc').textContent = ''; return; }
+    empty.style.display = 'none';
+    const [W, H] = svgEl(svg, box);
+    const avg = s.map(r => Number(r.avg)), mx = s.map(r => Number(r.max));
+    const top = Math.max(...mx) * 1.08 || 1;
+    const L = 0, R = 40, T = 6, B = 6, pw = W - L - R, ph = H - T - B;
+    const x = i => L + i / (s.length - 1) * pw, y = v => T + (1 - v / top) * ph;
+    const band = mx.map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1)).join(' ') + ' L' + x(s.length - 1).toFixed(1) + ' ' + (T + ph) + ' L' + L + ' ' + (T + ph) + ' Z';
+    const line = avg.map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1)).join(' ');
+    let g = '';
+    niceTicks(0, top, 2).forEach(v => {
+      g += '<line x1="' + L + '" x2="' + (L + pw) + '" y1="' + y(v).toFixed(1) + '" y2="' + y(v).toFixed(1) + '" stroke="#1d2940"/>' +
+           '<text x="' + (W - 2) + '" y="' + (y(v) + 4).toFixed(1) + '" text-anchor="end" fill="#7d8ba1" font-size="12">' + fmt(v, 0) + '</text>';
+    });
+    svg.innerHTML = g + '<path d="' + band + '" fill="rgba(226,180,76,.18)"/>' +
+      '<path d="' + line + '" fill="none" stroke="#e2b44c" stroke-width="1.5" stroke-linejoin="round"/>';
+    spreadGeo = { s, x, pw, L };
+    const meanAvg = avg.reduce((a, b) => a + b, 0) / avg.length;
+    $('spread-desc').textContent = (A.hours > 72 ? '72' : A.hours) + ' giờ, TB ' + fmt(meanAvg, 0) + ' points';
+  }
+  $('spread-box').addEventListener('pointermove', e => {
+    if (!spreadGeo) return;
+    const r = e.currentTarget.getBoundingClientRect(), px = e.clientX - r.left, g = spreadGeo;
+    const i = Math.max(0, Math.min(g.s.length - 1, Math.round((px - g.L) / g.pw * (g.s.length - 1))));
+    const tip = $('spread-tip'), row = g.s[i];
+    tip.innerHTML = esc(shortTime(row.t)) + '<br>TB <b>' + fmt(row.avg, 0) + '</b>, cao nhất <b>' + fmt(row.max, 0) + '</b>';
+    tip.style.display = 'block';
+    tip.style.left = Math.max(0, Math.min(r.width - tip.offsetWidth, px - tip.offsetWidth / 2)) + 'px';
+    tip.style.top = '0px';
+  });
+  $('spread-box').addEventListener('pointerleave', () => { $('spread-tip').style.display = 'none'; });
+
+  function renderMarket() {
+    const ticks = (D && D.latest_ticks) || {};
+    const x = ticks[BOT_SYMBOL];
+    if (x) {
+      $('xau-price').textContent = fmt(x.bid, 2);
+      $('xau-bid').textContent = fmt(x.bid, 2);
+      $('xau-ask').textContent = fmt(x.ask, 2);
+      $('xau-spread').textContent = x.spread_points == null ? '--' : fmt(x.spread_points, 0);
+      $('tick-time').textContent = 'giá lúc ' + (x.time || '');
+    }
+    const j = ticks.USDJPYc;
+    if (j) { $('jpy-price').textContent = fmt(j.bid, 3); $('jpy-spread').textContent = 'spread ' + fmt(j.spread_points, 0); }
   }
 
+  /* ---------- data ---------- */
   async function getJSON(path) {
     const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 8000);
+    const t = setTimeout(() => ctrl.abort(), 10000);
     try {
       const r = await fetch(base + path, { signal: ctrl.signal, cache: 'no-store' });
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return await r.json();
     } finally { clearTimeout(t); }
   }
+  function renderAll() {
+    renderAccount(); renderBot(); renderPositions(); renderDeals(); renderPerf(); renderMarket();
+  }
+  function renderCharts() { renderCurve(); renderDaily(); renderSpread(); }
 
   async function refresh() {
     try {
-      const d = await getJSON('api/data');
-      lastOk = Date.now(); failures = 0; connectedNow = !!d.connected;
-      if (d.connected) hideAlert();
-      else showAlert('Dịch vụ vẫn chạy nhưng MT5 không kết nối được sàn. ' + (d.watchdog_status || ''), true);
-      renderAccount(d.account, d.analytics_summary);
-      renderPositions(d.positions || []);
-      renderPerf(d.analytics_summary);
-      renderMarket(d.latest_ticks || {});
-      lastDeals = d.recent_deals || d.today_deals || [];
-      renderDeals();
+      D = await getJSON('api/data');
+      lastOk = Date.now(); failures = 0; connectedNow = !!D.connected;
+      if (D.connected) hideAlert();
+      else showAlert('Dịch vụ vẫn chạy nhưng MT5 không kết nối được sàn. ' + (D.watchdog_status || ''), true);
+      renderAll();
+      if (!A) renderDaily();
     } catch (e) {
       failures++;
       if (failures >= 2) {
         const why = e.name === 'AbortError' ? 'quá thời gian chờ' : e.message;
         showAlert(lastOk
-          ? 'Mất kết nối tới dịch vụ (' + why + '). Số liệu bên dưới là lần cập nhật cuối.'
+          ? 'Mất kết nối tới dịch vụ (' + why + '). Số liệu đang hiện là lần cập nhật cuối.'
           : 'Không tải được dữ liệu từ dịch vụ (' + why + '). Kiểm tra service.py trên VPS rồi bấm Thử lại.');
       }
     }
-    renderStatus(connectedNow);
+    renderStatus();
+  }
+  async function refreshAnalytics() {
+    try { A = await getJSON('api/analytics?hours=' + hours + '&deals=500'); }
+    catch (e) { if (!A) { $('curve-empty').textContent = 'Không tải được đường equity.'; $('spread-empty').textContent = 'Không tải được spread.'; } return; }
+    renderCharts();
   }
 
-  async function refreshCurve() {
-    try { const a = await getJSON('api/analytics'); renderCurve(a.equity_curve); }
-    catch (e) { if (!$('curve-svg').innerHTML) $('curve-empty').textContent = 'Không tải được đường equity.'; }
-  }
+  document.querySelectorAll('.seg button').forEach(btn => {
+    btn.setAttribute('aria-pressed', String(Number(btn.dataset.hours) === hours));
+    btn.addEventListener('click', () => {
+      hours = Number(btn.dataset.hours);
+      try { localStorage.setItem('nyao.hours', String(hours)); } catch (e) {}
+      document.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+      $('curve-desc').textContent = 'Đang tải…';
+      refreshAnalytics();
+    });
+  });
+  $('retry').addEventListener('click', () => { refresh(); refreshAnalytics(); });
 
-  $('retry').addEventListener('click', () => { refresh(); refreshCurve(); });
-  refresh(); refreshCurve();
+  // Redraw charts at their new pixel size; switch table/card markup at the breakpoint
+  let rz = 0;
+  if (window.ResizeObserver) {
+    const ro = new ResizeObserver(() => { cancelAnimationFrame(rz); rz = requestAnimationFrame(renderCharts); });
+    ['curve-box', 'daily-box', 'spread-box'].forEach(id => ro.observe($(id)));
+  } else {
+    window.addEventListener('resize', () => { cancelAnimationFrame(rz); rz = requestAnimationFrame(renderCharts); });
+  }
+  const onBreak = () => { renderPositions(); renderDeals(); };
+  if (WIDE.addEventListener) WIDE.addEventListener('change', onBreak); else WIDE.addListener(onBreak);
+
+  renderStatus();
+  refresh(); refreshAnalytics();
   setInterval(refresh, 5000);
-  setInterval(refreshCurve, 60000);
+  setInterval(refreshAnalytics, 60000);
 })();
 </script>
 </body>

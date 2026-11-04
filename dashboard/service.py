@@ -15,12 +15,14 @@ from datetime import datetime, timezone, timedelta
 from logging.handlers import RotatingFileHandler
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from urllib.parse import urlsplit, parse_qs
 from socketserver import ThreadingMixIn
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)
 from analytics_db import AnalyticsDatabase, TZ_VN  # noqa: E402
 from metrics import is_cent_currency  # noqa: E402
+from bot_state import read_bot_states  # noqa: E402
 
 try:
     import MetaTrader5 as mt5
@@ -56,6 +58,7 @@ STATE = {
     "analytics_summary": {},
     "latest_ticks": {},
     "recent_deals": [],
+    "bot": [],
 }
 STATE_LOCK = threading.Lock()
 
@@ -65,6 +68,9 @@ HISTORY_OVERLAP_SEC = 3600
 LOOP_INTERVAL_SEC = 5
 SNAPSHOT_INTERVAL_SEC = 60
 PRUNE_INTERVAL_SEC = 21600
+BOT_STATE_INTERVAL_SEC = 15
+ANALYTICS_MAX_HOURS = 720      # 30 days of equity snapshots
+SPREAD_MAX_HOURS = 72          # spread chart window cap
 
 
 def _load_html() -> bytes:
@@ -265,6 +271,7 @@ def get_mt5_snapshot():
         "positions": positions,
         "ping": term_info.ping_last / 1000.0 if hasattr(term_info, "ping_last") else 0,
         "latest_ticks": latest_ticks,
+        "_data_path": getattr(term_info, "data_path", ""),
     }
     return True, data, deals_changed
 
@@ -279,6 +286,8 @@ def watchdog_worker():
     today_deals, today_profit = [], 0.0
     summary = None
     recent_deals = None
+    last_bot_time = 0.0
+    bot_states = []
 
     while True:
         try:
@@ -315,6 +324,14 @@ def watchdog_worker():
                 res["today_profit"] = round(today_profit, 2)
                 res["today_profit_usd"] = round(today_profit / 100.0, 2) if res["is_cent"] else round(today_profit, 2)
 
+                data_path = res.pop("_data_path", "")
+                if now_time - last_bot_time >= BOT_STATE_INTERVAL_SEC:
+                    try:
+                        bot_states = read_bot_states(data_path, res["login"])
+                    except Exception as e:  # never let a state-file problem break the watchdog
+                        logger.warning(f"Bot state read failed: {e}")
+                    last_bot_time = now_time
+
                 if now_time - last_prune_time >= PRUNE_INTERVAL_SEC:
                     analytics.prune_old_ticks(retention_days=3, spread_stats_retention_days=30)
                     last_prune_time = now_time
@@ -328,6 +345,7 @@ def watchdog_worker():
                     "latest_ticks": res.get("latest_ticks", {}),
                     "analytics_summary": summary,
                     "recent_deals": recent_deals,
+                    "bot": bot_states,
                     "consecutive_failures": 0,
                     "watchdog_status": "Healthy (Connected)",
                 })
@@ -379,16 +397,31 @@ class DashboardHTTPHandler(BaseHTTPRequestHandler):
                     "analytics_summary": STATE["analytics_summary"],
                     "latest_ticks": STATE["latest_ticks"],
                     "recent_deals": STATE["recent_deals"],
+                    "bot": STATE["bot"],
                 }
             # STATE values are replaced wholesale by the worker (never mutated), so serializing
             # outside the lock is safe.
             self._send_json(200, resp)
         elif clean_path.endswith("/api/analytics"):
             # DB calls happen outside STATE_LOCK; AnalyticsDatabase has its own lock.
+            # ?hours=N (equity window, default 24) &deals=N (closed deals, default 50)
+            q = parse_qs(urlsplit(self.path).query)
+
+            def qint(name, default, lo, hi):
+                try:
+                    return max(lo, min(hi, int(q.get(name, [default])[0])))
+                except (TypeError, ValueError):
+                    return default
+
+            hours = qint("hours", 24, 1, ANALYTICS_MAX_HOURS)
+            now = time.time()
             self._send_json(200, {
+                "hours": hours,
                 "summary": analytics.get_performance_summary(),
-                "equity_curve": analytics.get_equity_curve(limit=100),
-                "recent_deals": analytics.get_recent_closed_deals(limit=50),
+                "equity_curve": analytics.get_equity_curve_since(now - hours * 3600, max_points=720),
+                "recent_deals": analytics.get_recent_closed_deals(limit=qint("deals", 50, 1, 500)),
+                "spread": {sym: analytics.get_spread_series(sym, now - min(hours, SPREAD_MAX_HOURS) * 3600)
+                           for sym in TRACKED_SYMBOLS},
             })
         elif clean_path.endswith("/health"):
             with STATE_LOCK:
