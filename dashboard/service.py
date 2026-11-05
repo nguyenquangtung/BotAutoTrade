@@ -59,6 +59,7 @@ STATE = {
     "latest_ticks": {},
     "recent_deals": [],
     "bot": [],
+    "htf": None,
 }
 STATE_LOCK = threading.Lock()
 
@@ -69,6 +70,11 @@ LOOP_INTERVAL_SEC = 5
 SNAPSHOT_INTERVAL_SEC = 60
 PRUNE_INTERVAL_SEC = 21600
 BOT_STATE_INTERVAL_SEC = 15
+HTF_INTERVAL_SEC = 60
+# Mirrors the EA's HTF trend filter in settings/xauusd-default.set
+HTF_SYMBOL = "XAUUSDc"
+HTF_EMA_PERIOD = 50
+HTF_MIN_DISTANCE_PCT = 0.5
 ANALYTICS_MAX_HOURS = 720      # 30 days of equity snapshots
 SPREAD_MAX_HOURS = 72          # spread chart window cap
 
@@ -276,6 +282,51 @@ def get_mt5_snapshot():
     return True, data, deals_changed
 
 
+def compute_htf_filter(symbol=HTF_SYMBOL):
+    """Re-computes the EA's D1 EMA filter (HTFTrendAllows) from the last CLOSED D1 bar.
+    BUY needs close >= MinDistance% above a rising EMA, SELL the mirror image."""
+    rates = mt5.copy_rates_from_pos(symbol, mt5.TIMEFRAME_D1, 0, 500)
+    if rates is None or len(rates) < HTF_EMA_PERIOD + 3:
+        return None
+    closes = [float(r["close"]) for r in rates]
+    k = 2.0 / (HTF_EMA_PERIOD + 1)
+    ema = closes[0]
+    emas = []
+    for c in closes:                       # MT5 iMA EMA seeds with the first price; 500 bars converge
+        ema = c * k + ema * (1 - k)
+        emas.append(ema)
+    i = len(closes) - 2                    # last closed bar ([-1] is today's forming bar)
+    close, e0, e1 = closes[i], emas[i], emas[i - 1]
+    dist = (close - e0) / e0 * 100.0
+    slope = e0 - e1
+
+    def allows(d):
+        if d * (close - e0) <= 0:
+            return False, "giá " + ("dưới" if d > 0 else "trên") + " EMA50"
+        if d * slope <= 0:
+            return False, "EMA50 đang " + ("giảm" if slope < 0 else "tăng")
+        if d * dist < HTF_MIN_DISTANCE_PCT:
+            return False, "giá chưa cách EMA50 đủ %.1f%%" % HTF_MIN_DISTANCE_PCT
+        return True, ""
+
+    buy_ok, buy_why = allows(1)
+    sell_ok, sell_why = allows(-1)
+    live = closes[-1]
+    return {
+        "symbol": symbol,
+        "bar_date": datetime.fromtimestamp(int(rates[i]["time"]), tz=timezone.utc).strftime("%Y-%m-%d"),
+        "close": round(close, 2),
+        "ema": round(e0, 2),
+        "dist_pct": round(dist, 2),
+        "slope": round(slope, 2),
+        "live_price": round(live, 2),
+        "live_dist_pct": round((live - emas[-1]) / emas[-1] * 100.0, 2),
+        "min_distance_pct": HTF_MIN_DISTANCE_PCT,
+        "buy_ok": buy_ok, "buy_why": buy_why,
+        "sell_ok": sell_ok, "sell_why": sell_why,
+    }
+
+
 def watchdog_worker():
     """Background thread: polls MT5, writes DB, then swaps STATE under the lock (no I/O under lock)."""
     logger.info("Watchdog & Analytics background worker started.")
@@ -288,6 +339,8 @@ def watchdog_worker():
     recent_deals = None
     last_bot_time = 0.0
     bot_states = []
+    last_htf_time = 0.0
+    htf = None
 
     while True:
         try:
@@ -332,6 +385,13 @@ def watchdog_worker():
                         logger.warning(f"Bot state read failed: {e}")
                     last_bot_time = now_time
 
+                if now_time - last_htf_time >= HTF_INTERVAL_SEC:
+                    try:
+                        htf = compute_htf_filter() or htf
+                    except Exception as e:
+                        logger.warning(f"HTF filter compute failed: {e}")
+                    last_htf_time = now_time
+
                 if now_time - last_prune_time >= PRUNE_INTERVAL_SEC:
                     analytics.prune_old_ticks(retention_days=3, spread_stats_retention_days=30)
                     last_prune_time = now_time
@@ -346,6 +406,7 @@ def watchdog_worker():
                     "analytics_summary": summary,
                     "recent_deals": recent_deals,
                     "bot": bot_states,
+                    "htf": htf,
                     "consecutive_failures": 0,
                     "watchdog_status": "Healthy (Connected)",
                 })
@@ -398,6 +459,7 @@ class DashboardHTTPHandler(BaseHTTPRequestHandler):
                     "latest_ticks": STATE["latest_ticks"],
                     "recent_deals": STATE["recent_deals"],
                     "bot": STATE["bot"],
+                    "htf": STATE["htf"],
                 }
             # STATE values are replaced wholesale by the worker (never mutated), so serializing
             # outside the lock is safe.

@@ -114,6 +114,16 @@
     .segs i.on { background: var(--down); }
     .bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
     .bar > i { display: block; height: 100%; border-radius: 3px; background: var(--up); }
+    .htf { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .htf-row { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .htf-row b { color: var(--text); font-weight: 600; }
+    .gates { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    .gate { border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px; font-size: 13px; }
+    .gate b { display: block; font-size: 14px; }
+    .gate.open { border-color: rgba(52, 211, 153, .45); }
+    .gate.open b { color: var(--up); }
+    .gate.shut b { color: var(--muted); }
+    .gate span { color: var(--faint); }
     .facts { margin-top: 16px; display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font-size: 13px; }
     .facts dt { color: var(--muted); }
     .facts dd { text-align: right; font-weight: 500; }
@@ -352,6 +362,16 @@
         <div class="meter-head"><span>Lỗ trong ngày (ước tính)</span><span><b id="dl-used">--</b> / giới hạn <span id="dl-max"></span></span></div>
         <div class="bar"><i id="dl-bar" style="width:0"></i></div>
       </div>
+      <div class="htf" id="htf">
+        <div class="panel-head" style="margin-bottom:4px;min-height:0"><h2>Xu hướng D1 (EMA50)</h2><span id="htf-date" class="count"></span></div>
+        <div class="htf-row"><span>Đóng cửa ngày gần nhất</span><span><b id="htf-close">--</b> <span id="htf-dist"></span></span></div>
+        <div class="htf-row"><span>EMA50</span><span><b id="htf-ema">--</b> <span id="htf-slope"></span></span></div>
+        <div class="htf-row"><span>Giá hiện tại so với EMA50</span><span id="htf-live">--</span></div>
+        <div class="gates">
+          <div id="gate-buy" class="gate"><b>BUY</b><span>--</span></div>
+          <div id="gate-sell" class="gate"><b>SELL</b><span>--</span></div>
+        </div>
+      </div>
       <dl class="facts">
         <dt>Rủi ro mỗi lệnh</dt><dd>1,25% vốn, SL cách $20</dd>
         <dt>Chốt lời</dt><dd>Xét mỗi $20, SL bám từ +$10</dd>
@@ -520,7 +540,7 @@
       text = 'Thua ' + b.loss_streak + ' lệnh liên tiếp. Bot đang vào lệnh trên giấy và sẽ đánh lại khi một lệnh giấy thắng. ';
       text += b.paper
         ? 'Lệnh giấy: ' + (b.paper.side === 'BUY' ? 'Mua' : 'Bán') + ' tại ' + fmt(b.paper.entry, 2) + ', thắng ở ' + fmt(b.paper.target, 2) + ', thua ở ' + fmt(b.paper.stop, 2) + '.'
-        : 'Chưa có lệnh giấy: đang chờ tín hiệu đạt chuẩn.';
+        : 'Chưa có lệnh giấy. ' + htfSentence();
     } else if (b.cooldown_until_vn) {
       color = 'var(--warn)'; title = 'Đang nghỉ giữa các lệnh';
       text = 'Vào lệnh lại sau ' + shortTime(b.cooldown_until_vn) + '.';
@@ -529,7 +549,7 @@
       text = 'SL bám theo giá và dời về hoà vốn khi đủ lời.';
     } else {
       color = 'var(--up)'; title = 'Đang chờ tín hiệu';
-      text = 'Bot chỉ vào lệnh theo xu hướng ngày (D1) khi điểm tín hiệu đạt chuẩn.';
+      text = htfSentence();
     }
     dot.style.background = color;
     head.textContent = title;
@@ -549,6 +569,34 @@
     const bar = $('dl-bar');
     bar.style.width = (frac * 100) + '%';
     bar.style.background = frac >= 1 ? 'var(--down)' : frac >= .6 ? 'var(--warn)' : 'var(--up)';
+  }
+
+  function renderHtf() {
+    const h = D && D.htf;
+    if (!h) return;
+    $('htf-date').textContent = 'nến ' + ddmm(h.bar_date);
+    $('htf-close').textContent = fmt(h.close, 2);
+    const dist = $('htf-dist');
+    dist.textContent = '(' + signed(h.dist_pct, 2) + '%)'; dist.className = toneCls(h.dist_pct);
+    $('htf-ema').textContent = fmt(h.ema, 2);
+    const sl = $('htf-slope');
+    sl.textContent = h.slope > 0 ? 'đang tăng' : h.slope < 0 ? 'đang giảm' : 'đi ngang'; sl.className = toneCls(h.slope);
+    $('htf-live').innerHTML = '<b>' + fmt(h.live_price, 2) + '</b> <span class="' + toneCls(h.live_dist_pct) + '">(' + signed(h.live_dist_pct, 2) + '%)</span>';
+    const gate = (id, ok, why, side) => {
+      const el = $(id);
+      el.className = 'gate ' + (ok ? 'open' : 'shut');
+      el.innerHTML = '<b>' + side + (ok ? ': được phép' : ': bị chặn') + '</b><span>' +
+        esc(ok ? 'chờ điểm tín hiệu ≥ 5' : why) + '</span>';
+    };
+    gate('gate-buy', h.buy_ok, h.buy_why, 'BUY');
+    gate('gate-sell', h.sell_ok, h.sell_why, 'SELL');
+  }
+  function htfSentence() {
+    const h = D && D.htf;
+    if (!h) return 'Bot chỉ vào lệnh theo xu hướng ngày (D1) khi điểm tín hiệu đạt chuẩn.';
+    if (h.buy_ok) return 'Xu hướng D1 cho BUY; đang chờ điểm tín hiệu BUY đạt 5.';
+    if (h.sell_ok) return 'Xu hướng D1 cho SELL; đang chờ điểm tín hiệu SELL đạt 5.';
+    return 'Xu hướng D1 chưa rõ nên cả BUY và SELL đều bị chặn.';
   }
 
   /* ---------- positions ---------- */
@@ -842,7 +890,7 @@
     } finally { clearTimeout(t); }
   }
   function renderAll() {
-    renderAccount(); renderBot(); renderPositions(); renderDeals(); renderPerf(); renderMarket();
+    renderAccount(); renderBot(); renderHtf(); renderPositions(); renderDeals(); renderPerf(); renderMarket();
   }
   function renderCharts() { renderCurve(); renderDaily(); renderSpread(); }
 
